@@ -11,12 +11,14 @@ const getPoolConfig = (): PoolConfig => {
   // 0. Priorità ASSOLUTA alla variabile custom per override manuale (es. Pooler)
   if (process.env.LINKTOP_DB_URL) {
     console.log('🔌 LINKTOP: Usando configurazione CUSTOM (LINKTOP_DB_URL)')
+    // Rimuovi ?sslmode=... dalla stringa se presente per evitare conflitti
+    const cleanUrl = process.env.LINKTOP_DB_URL.split('?')[0]
     return {
-      connectionString: process.env.LINKTOP_DB_URL,
-      ssl: { rejectUnauthorized: false },
+      connectionString: cleanUrl,
+      ssl: { rejectUnauthorized: false }, // Accetta certificati self-signed (necessario per Supabase Pooler)
       max: 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000, // Timeout aumentato per sicurezza
+      connectionTimeoutMillis: 10000,
     }
   }
 
@@ -25,8 +27,9 @@ const getPoolConfig = (): PoolConfig => {
   
   if (connectionString) {
     console.log('🔌 LINKTOP: Usando configurazione Standard Supabase/Vercel')
+    const cleanUrl = connectionString.split('?')[0]
     return {
-      connectionString: connectionString,
+      connectionString: cleanUrl,
       ssl: { rejectUnauthorized: false },
       max: 20,
       idleTimeoutMillis: 30000,
