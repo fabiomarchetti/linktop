@@ -116,7 +116,8 @@ export default function StetoscopioPage() {
     const audioBytes = new Uint8Array(fullAudio.buffer)
 
     // Combina header + audio data
-    const wavFile = new Blob([header, audioBytes], { type: 'audio/wav' })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const wavFile = new Blob([header, audioBytes] as any[], { type: 'audio/wav' })
 
     const durationSec = fullAudio.length / 4000
     console.log(`💾 Salvataggio file WAV...`)
