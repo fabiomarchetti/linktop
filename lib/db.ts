@@ -2,11 +2,19 @@ import { Pool, PoolConfig } from 'pg'
 
 // Configurazione flessibile per supportare sia Supabase (Vercel) che VPS legacy
 const getPoolConfig = (): PoolConfig => {
-  // 1. Priorità a Supabase / Vercel Postgres
-  if (process.env.POSTGRES_URL) {
-    console.log('🔌 LINKTOP: Usando configurazione Supabase/Vercel')
+  // Debug: Stampa le variabili d'ambiente disponibili (solo chiavi, per sicurezza)
+  if (process.env.NODE_ENV === 'production') {
+    const envKeys = Object.keys(process.env).filter(k => k.includes('DB') || k.includes('POSTGRES') || k.includes('URL'))
+    console.log('🔍 DEBUG ENV VARS:', envKeys.join(', '))
+  }
+
+  // 1. Priorità a Supabase / Vercel Postgres (POSTGRES_URL o DATABASE_URL)
+  const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL
+  
+  if (connectionString) {
+    console.log('🔌 LINKTOP: Usando configurazione Supabase/Vercel (Connection String rilevata)')
     return {
-      connectionString: process.env.POSTGRES_URL,
+      connectionString: connectionString,
       ssl: {
         rejectUnauthorized: false // Necessario per Supabase in alcune config
       },
@@ -17,7 +25,7 @@ const getPoolConfig = (): PoolConfig => {
   }
 
   // 2. Fallback alla configurazione manuale (VPS o Tunnel SSH locale)
-  console.log('🔌 LINKTOP: Usando configurazione Manuale/Legacy')
+  console.log('🔌 LINKTOP: Usando configurazione Manuale/Legacy (Nessuna Connection String trovata)')
   const defaultPort = process.env.NODE_ENV === 'production' ? '5432' : '5433'
   
   return {
@@ -29,8 +37,6 @@ const getPoolConfig = (): PoolConfig => {
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
-    // Nota: SSL disabilitato di default per tunnel locale/VPS legacy
-    // Se la VPS richiedesse SSL, aggiungere qui la logica
   }
 }
 
@@ -44,7 +50,6 @@ pool.on('error', (err) => {
 
 // Log connessione (opzionale, utile per debug)
 pool.on('connect', () => {
-  // Evitiamo log troppo verbosi in produzione, ma utile per sapere che è connesso
   // console.log(`🏥 LINKTOP: Connessione al database attiva`)
 })
 
