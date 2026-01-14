@@ -1,0 +1,425 @@
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
+import {
+  ArrowLeft, Eye, Camera, Video, Save, Download,
+  RefreshCw, AlertTriangle, CheckCircle, Trash2
+} from 'lucide-react'
+import Sidebar from '@/components/Sidebar'
+
+// Interfaccia per i dati del dispositivo
+interface DeviceData {
+  deviceId: string
+  deviceName: string
+  isConnected: boolean
+  batteryLevel: number
+}
+
+interface CapturedImage {
+  id: number
+  dataUrl: string
+  timestamp: Date
+  notes: string
+}
+
+export default function OtoscopioPage() {
+  const [status, setStatus] = useState<string>('Pronto per la connessione')
+  const [device, setDevice] = useState<DeviceData>({
+    deviceId: 'Non connesso',
+    deviceName: '',
+    isConnected: false,
+    batteryLevel: 0
+  })
+
+  const [isCapturing, setIsCapturing] = useState(false)
+  const [capturedImages, setCapturedImages] = useState<CapturedImage[]>([])
+  const [bluetoothDevice, setBluetoothDevice] = useState<BluetoothDevice | null>(null)
+  const [gattServer, setGattServer] = useState<BluetoothRemoteGATTServer | null>(null)
+  const [writeCharacteristic, setWriteCharacteristic] = useState<BluetoothRemoteGATTCharacteristic | null>(null)
+  const [notifyCharacteristic, setNotifyCharacteristic] = useState<BluetoothRemoteGATTCharacteristic | null>(null)
+  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected')
+  const [errorMessage, setErrorMessage] = useState<string>('')
+  const [selectedEar, setSelectedEar] = useState<'left' | 'right'>('left')
+  const [currentNotes, setCurrentNotes] = useState<string>('')
+
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  // Verifica supporto Web Bluetooth
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && !navigator.bluetooth) {
+      setStatus('❌ Web Bluetooth non supportato in questo browser. Usa Chrome o Edge.')
+      setErrorMessage('Browser non supportato')
+    }
+  }, [])
+
+  // Funzione per connettere il dispositivo Otoscopio
+  const handleConnectDevice = async () => {
+    try {
+      setConnectionStatus('connecting')
+      setErrorMessage('')
+      setStatus('🔍 Ricerca otoscopio LINKTOP...')
+
+      if (!navigator.bluetooth) {
+        throw new Error('Web Bluetooth non supportato')
+      }
+
+      // UUID del servizio principale LINKTOP
+      const LINKTOP_SERVICE_UUID = '0000fff0-0000-1000-8000-00805f9b34fb'
+
+      const linktopServices = [
+        LINKTOP_SERVICE_UUID,
+        '0000180a-0000-1000-8000-00805f9b34fb', // Device Information
+        '0000180f-0000-1000-8000-00805f9b34fb', // Battery Service
+      ]
+
+      // Richiedi dispositivo con nome che contiene "OTO"
+      const bluetoothDevice = await navigator.bluetooth.requestDevice({
+        filters: [
+          { namePrefix: 'OTO' },
+          { namePrefix: 'LINKTOP' }
+        ],
+        optionalServices: linktopServices
+      })
+
+      setStatus('🔌 Connessione in corso...')
+
+      if (!bluetoothDevice.gatt) {
+        throw new Error('GATT non disponibile')
+      }
+
+      const server = await bluetoothDevice.gatt.connect()
+      console.log('✅ GATT connesso')
+
+      const deviceName = bluetoothDevice.name || 'Otoscopio'
+
+      // Listener per disconnessione
+      bluetoothDevice.addEventListener('gattserverdisconnected', () => {
+        console.log('🔌 Dispositivo disconnesso')
+        setStatus('⚠️ Dispositivo disconnesso')
+        setConnectionStatus('disconnected')
+        setDevice(prev => ({ ...prev, isConnected: false }))
+        setBluetoothDevice(null)
+        setGattServer(null)
+      })
+
+      setBluetoothDevice(bluetoothDevice)
+      setGattServer(server)
+
+      // Leggi servizi e characteristic
+      const service = await server.getPrimaryService(LINKTOP_SERVICE_UUID)
+      const characteristics = await service.getCharacteristics()
+
+      const notifyChar = characteristics.find(c => c.properties.notify)
+      const writeChar = characteristics.find(c => c.properties.write || c.properties.writeWithoutResponse)
+
+      if (notifyChar && writeChar) {
+        setNotifyCharacteristic(notifyChar)
+        setWriteCharacteristic(writeChar)
+
+        // Abilita notifiche
+        await notifyChar.startNotifications()
+        console.log('✅ Notifiche BLE abilitate')
+      }
+
+      setDevice({
+        deviceId: bluetoothDevice.id,
+        deviceName,
+        isConnected: true,
+        batteryLevel: 100 // TODO: Leggere batteria reale
+      })
+
+      setStatus(`✅ Connesso a: ${deviceName}`)
+      setConnectionStatus('connected')
+
+    } catch (error: any) {
+      console.error('Errore connessione:', error)
+      let errorMsg = ''
+      if (error.name === 'NotFoundError') {
+        errorMsg = '⚠️ Selezione annullata o nessun dispositivo trovato'
+      } else {
+        errorMsg = `❌ Errore: ${error.message}`
+      }
+      setStatus(errorMsg)
+      setErrorMessage(errorMsg)
+      setConnectionStatus('disconnected')
+    }
+  }
+
+  // Disconnetti dispositivo
+  const handleDisconnect = () => {
+    if (bluetoothDevice?.gatt?.connected) {
+      bluetoothDevice.gatt.disconnect()
+    }
+    setBluetoothDevice(null)
+    setGattServer(null)
+    setNotifyCharacteristic(null)
+    setWriteCharacteristic(null)
+    setDevice(prev => ({ ...prev, isConnected: false }))
+    setConnectionStatus('disconnected')
+    setStatus('Pronto per la connessione')
+  }
+
+  // Cattura immagine (simulata)
+  const captureImage = () => {
+    if (!device.isConnected) {
+      setStatus('⚠️ Connetti prima l\'otoscopio')
+      return
+    }
+
+    // TODO: Implementare cattura reale da BLE
+    // Per ora creiamo un'immagine placeholder
+    const newImage: CapturedImage = {
+      id: Date.now(),
+      dataUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzJhNGE3YSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjI0IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltbWFnaW5lIE90b3Njb3BpYTwvdGV4dD48L3N2Zz4=',
+      timestamp: new Date(),
+      notes: currentNotes || `Ispezione orecchio ${selectedEar === 'left' ? 'sinistro' : 'destro'}`
+    }
+
+    setCapturedImages(prev => [newImage, ...prev])
+    setStatus(`✅ Immagine catturata (${selectedEar === 'left' ? 'Orecchio sinistro' : 'Orecchio destro'})`)
+    setCurrentNotes('')
+
+    console.log('📸 Immagine catturata')
+  }
+
+  // Elimina immagine
+  const deleteImage = (imageId: number) => {
+    setCapturedImages(prev => prev.filter(img => img.id !== imageId))
+    setStatus('🗑️ Immagine eliminata')
+  }
+
+  // Salva tutte le immagini
+  const saveAllImages = async () => {
+    if (capturedImages.length === 0) {
+      setStatus('⚠️ Nessuna immagine da salvare')
+      return
+    }
+
+    // TODO: Implementare salvataggio reale nel database
+    console.log('💾 Salvataggio immagini nel database...', capturedImages)
+    setStatus(`✅ ${capturedImages.length} immagini salvate nel database`)
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-emerald-600 via-teal-700 to-cyan-800">
+      {/* Background Animation */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -inset-[10px] opacity-30">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-400 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
+          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-teal-400 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
+          <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-cyan-400 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
+        </div>
+      </div>
+
+      <Sidebar />
+
+      <main className="ml-64 transition-all duration-300">
+        <header className="relative z-10 bg-white/5 backdrop-blur-lg border-b border-white/10 px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/dashboard" className="p-2 hover:bg-white/10 rounded-lg transition-all">
+                <ArrowLeft className="w-6 h-6 text-white" />
+              </Link>
+              <div>
+                <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                  <Eye className="w-8 h-8" />
+                  Otoscopio Digitale
+                </h1>
+                <p className="text-gray-300 mt-1">Ispezione otoscopica con cattura immagini</p>
+              </div>
+            </div>
+
+            {device.isConnected ? (
+              <button
+                onClick={handleDisconnect}
+                className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-xl font-semibold transition-all border border-red-500/30"
+              >
+                Disconnetti
+              </button>
+            ) : (
+              <button
+                onClick={handleConnectDevice}
+                disabled={connectionStatus === 'connecting'}
+                className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold flex items-center gap-2 hover:opacity-90 transition-all shadow-lg disabled:opacity-50"
+              >
+                {connectionStatus === 'connecting' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                {connectionStatus === 'connecting' ? 'Connessione...' : 'Connetti Otoscopio'}
+              </button>
+            )}
+          </div>
+        </header>
+
+        <div className="relative z-10 p-8">
+          {/* Status Message */}
+          <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
+            errorMessage
+              ? 'bg-red-500/20 border border-red-500/30 text-red-300'
+              : device.isConnected
+              ? 'bg-green-500/20 border border-green-500/30 text-green-300'
+              : 'bg-blue-500/20 border border-blue-500/30 text-blue-300'
+          }`}>
+            {errorMessage ? <AlertTriangle className="w-5 h-5" /> : device.isConnected ? <CheckCircle className="w-5 h-5" /> : <RefreshCw className="w-5 h-5" />}
+            {status}
+          </div>
+
+          {/* Device Info */}
+          {device.isConnected && (
+            <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 mb-6 shadow-2xl">
+              <h2 className="text-xl font-bold text-white mb-4">Dispositivo Connesso</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-gray-400 text-sm">Nome</p>
+                  <p className="text-white font-semibold">{device.deviceName}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">ID</p>
+                  <p className="text-white font-mono text-sm">{device.deviceId.substring(0, 16)}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Capture Controls */}
+          {device.isConnected && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              {/* Capture Panel */}
+              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl">
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                  📸 Cattura Immagine
+                </h2>
+
+                {/* Ear Selection */}
+                <div className="mb-6">
+                  <label className="block text-gray-300 mb-2 font-semibold">Orecchio da ispezionare:</label>
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setSelectedEar('left')}
+                      className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${
+                        selectedEar === 'left'
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                      }`}
+                    >
+                      👈 Sinistro
+                    </button>
+                    <button
+                      onClick={() => setSelectedEar('right')}
+                      className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${
+                        selectedEar === 'right'
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                      }`}
+                    >
+                      👉 Destro
+                    </button>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div className="mb-6">
+                  <label className="block text-gray-300 mb-2 font-semibold">Note ispezione (opzionale):</label>
+                  <textarea
+                    value={currentNotes}
+                    onChange={(e) => setCurrentNotes(e.target.value)}
+                    placeholder="Aggiungi annotazioni..."
+                    rows={3}
+                    className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                {/* Capture Button */}
+                <button
+                  onClick={captureImage}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 hover:opacity-90 transition-all shadow-lg"
+                >
+                  <Camera className="w-6 h-6" />
+                  Cattura Immagine
+                </button>
+
+                {/* Instructions */}
+                <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                  <h3 className="text-white font-semibold mb-2">💡 Come usare l'otoscopio:</h3>
+                  <ol className="text-gray-300 text-sm space-y-1 list-decimal list-inside">
+                    <li>Connetti l'otoscopio LINKTOP via Bluetooth</li>
+                    <li>Seleziona l'orecchio da ispezionare (sinistro/destro)</li>
+                    <li>Inserisci delicatamente lo speculum nell'orecchio</li>
+                    <li>Clicca "Cattura Immagine" quando la vista è ottimale</li>
+                    <li>Aggiungi note se necessario e salva nel database</li>
+                  </ol>
+                </div>
+              </div>
+
+              {/* Captured Images Gallery */}
+              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                    🖼️ Immagini Catturate ({capturedImages.length})
+                  </h2>
+                  {capturedImages.length > 0 && (
+                    <button
+                      onClick={saveAllImages}
+                      className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-lg font-semibold transition-all border border-emerald-500/30 flex items-center gap-2"
+                    >
+                      <Save className="w-4 h-4" />
+                      Salva Tutto
+                    </button>
+                  )}
+                </div>
+
+                {capturedImages.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Camera className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                    <p className="text-gray-400">Nessuna immagine catturata</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4 max-h-[600px] overflow-y-auto">
+                    {capturedImages.map((image) => (
+                      <div key={image.id} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                        <div className="flex gap-4">
+                          <img
+                            src={image.dataUrl}
+                            alt="Otoscopia"
+                            className="w-32 h-32 object-cover rounded-lg border-2 border-white/20"
+                          />
+                          <div className="flex-1">
+                            <p className="text-white font-semibold mb-1">
+                              {image.timestamp.toLocaleTimeString('it-IT')}
+                            </p>
+                            <p className="text-gray-300 text-sm mb-2">{image.notes}</p>
+                            <button
+                              onClick={() => deleteImage(image.id)}
+                              className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg text-sm font-semibold transition-all border border-red-500/30 flex items-center gap-1"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              Elimina
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Info quando non connesso */}
+          {!device.isConnected && (
+            <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl text-center">
+              <Eye className="w-24 h-24 text-gray-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-2">Nessun dispositivo connesso</h2>
+              <p className="text-gray-300 mb-6">
+                Clicca sul pulsante "Connetti Otoscopio" per iniziare
+              </p>
+              <p className="text-gray-400 text-sm">
+                Assicurati che il dispositivo sia acceso e nel raggio Bluetooth
+              </p>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  )
+}

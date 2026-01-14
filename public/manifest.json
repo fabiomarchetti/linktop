@@ -1,0 +1,50 @@
+{
+  "name": "LINKTOP Health Monitor - Pagina Utente",
+  "short_name": "LINKTOP",
+  "description": "Monitora la tua salute con i dispositivi LINKTOP",
+  "start_url": "/utente",
+  "display": "standalone",
+  "background_color": "#0d9488",
+  "theme_color": "#14b8a6",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "medical", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Heart Monitor",
+      "short_name": "Cuore",
+      "description": "Misura pressione, battito e ossigeno",
+      "url": "/utente/dispositivi/heart-monitor",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Stetoscopio",
+      "short_name": "Stetoscopio",
+      "description": "Auscultazione digitale",
+      "url": "/utente/dispositivi/stetoscopio",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Otoscopio",
+      "short_name": "Otoscopio",
+      "description": "Ispezione orecchio",
+      "url": "/utente/dispositivi/otoscopio",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "prefer_related_applications": false
+}

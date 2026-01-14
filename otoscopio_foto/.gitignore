@@ -1,0 +1,7 @@
+# Ignora tutte le foto
+*.jpg
+*.jpeg
+*.png
+
+# Permetti .gitignore
+!.gitignore

@@ -1,0 +1,7 @@
+# Ignora tutti i video
+*.webm
+*.mp4
+*.avi
+
+# Permetti .gitignore
+!.gitignore
