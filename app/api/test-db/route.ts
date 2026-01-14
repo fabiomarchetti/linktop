@@ -5,20 +5,22 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    // 1. Controlla variabili d'ambiente (oscurando i valori sensibili)
+    // 1. Controlla variabili d'ambiente
     const envVars = {
+      LINKTOP_DB_URL: process.env.LINKTOP_DB_URL ? 'Presente (Override) ✅' : 'Mancante ❌',
       POSTGRES_URL: process.env.POSTGRES_URL ? 'Presente ✅' : 'Mancante ❌',
       DATABASE_URL: process.env.DATABASE_URL ? 'Presente ✅' : 'Mancante ❌',
-      DB_HOST: process.env.DB_HOST || 'Mancante',
       NODE_ENV: process.env.NODE_ENV,
     }
 
     // 2. Prova connessione al DB
     const client = await pool.connect()
     let dbResult
+    let connectionInfo = 'Unknown'
     try {
-      const res = await client.query('SELECT version(), current_database()')
+      const res = await client.query('SELECT version(), current_database(), inet_server_addr(), inet_server_port()')
       dbResult = res.rows[0]
+      connectionInfo = `Connected to ${dbResult.inet_server_addr}:${dbResult.inet_server_port}`
     } finally {
       client.release()
     }
@@ -26,6 +28,7 @@ export async function GET() {
     return NextResponse.json({
       status: 'success',
       message: 'Database connesso correttamente! 🚀',
+      connection: connectionInfo,
       env: envVars,
       db: dbResult
     })
@@ -39,8 +42,8 @@ export async function GET() {
       code: error.code,
       details: error,
       env: {
-        POSTGRES_URL: process.env.POSTGRES_URL ? 'Presente (len: ' + process.env.POSTGRES_URL.length + ')' : 'Mancante',
-        DATABASE_URL: process.env.DATABASE_URL ? 'Presente' : 'Mancante'
+        LINKTOP_DB_URL: process.env.LINKTOP_DB_URL ? 'Presente' : 'Mancante',
+        POSTGRES_URL: process.env.POSTGRES_URL ? 'Presente' : 'Mancante'
       }
     }, { status: 500 })
   }

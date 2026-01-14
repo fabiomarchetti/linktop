@@ -8,16 +8,26 @@ const getPoolConfig = (): PoolConfig => {
     console.log('🔍 DEBUG ENV VARS:', envKeys.join(', '))
   }
 
+  // 0. Priorità ASSOLUTA alla variabile custom per override manuale (es. Pooler)
+  if (process.env.LINKTOP_DB_URL) {
+    console.log('🔌 LINKTOP: Usando configurazione CUSTOM (LINKTOP_DB_URL)')
+    return {
+      connectionString: process.env.LINKTOP_DB_URL,
+      ssl: { rejectUnauthorized: false },
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000, // Timeout aumentato per sicurezza
+    }
+  }
+
   // 1. Priorità a Supabase / Vercel Postgres (POSTGRES_URL o DATABASE_URL)
   const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL
   
   if (connectionString) {
-    console.log('🔌 LINKTOP: Usando configurazione Supabase/Vercel (Connection String rilevata)')
+    console.log('🔌 LINKTOP: Usando configurazione Standard Supabase/Vercel')
     return {
       connectionString: connectionString,
-      ssl: {
-        rejectUnauthorized: false // Necessario per Supabase in alcune config
-      },
+      ssl: { rejectUnauthorized: false },
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,
@@ -46,11 +56,6 @@ const pool = new Pool(getPoolConfig())
 // Gestione errori del pool
 pool.on('error', (err) => {
   console.error('❌ Errore pool PostgreSQL LINKTOP:', err)
-})
-
-// Log connessione (opzionale, utile per debug)
-pool.on('connect', () => {
-  // console.log(`🏥 LINKTOP: Connessione al database attiva`)
 })
 
 export default pool
