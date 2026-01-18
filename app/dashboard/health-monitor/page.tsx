@@ -74,6 +74,38 @@ export default function HealthMonitorPage() {
   const HR_OFFSET_MAX = 10
   const HR_OFFSET_DEFAULT = 0
 
+  // Pressione Sanguigna (sistolica e diastolica separate)
+  const [bpSystolicOffset, setBpSystolicOffset] = useState<number>(0)
+  const BP_SYSTOLIC_MIN = -20
+  const BP_SYSTOLIC_MAX = 20
+  const BP_SYSTOLIC_DEFAULT = 0
+
+  const [bpDiastolicOffset, setBpDiastolicOffset] = useState<number>(0)
+  const BP_DIASTOLIC_MIN = -15
+  const BP_DIASTOLIC_MAX = 15
+  const BP_DIASTOLIC_DEFAULT = 0
+
+  // Temperatura
+  const [temperatureOffset, setTemperatureOffset] = useState<number>(0)
+  const TEMP_OFFSET_MIN = -2.0
+  const TEMP_OFFSET_MAX = 2.0
+  const TEMP_OFFSET_DEFAULT = 0
+  const TEMP_OFFSET_STEP = 0.1
+
+  // ECG (ampiezza/gain)
+  const [ecgOffset, setEcgOffset] = useState<number>(0)
+  const ECG_OFFSET_MIN = -10
+  const ECG_OFFSET_MAX = 10
+  const ECG_OFFSET_DEFAULT = 0
+
+  // Refs per accesso ai valori aggiornati nelle closure degli event listener BLE
+  const spo2CalibrationOffsetRef = useRef<number>(4)
+  const hrCalibrationOffsetRef = useRef<number>(0)
+  const bpSystolicOffsetRef = useRef<number>(0)
+  const bpDiastolicOffsetRef = useRef<number>(0)
+  const temperatureOffsetRef = useRef<number>(0)
+  const ecgOffsetRef = useRef<number>(0)
+
   // Timer per barra progresso SpO2
   const [spo2Progress, setSpo2Progress] = useState(0)
   const [spo2TimerStarted, setSpo2TimerStarted] = useState(false)
@@ -154,6 +186,7 @@ export default function HealthMonitorPage() {
       const offset = parseInt(savedSpo2Offset, 10)
       if (!isNaN(offset) && offset >= SPO2_OFFSET_MIN && offset <= SPO2_OFFSET_MAX) {
         setSpo2CalibrationOffset(offset)
+        spo2CalibrationOffsetRef.current = offset
         console.log(`🔧 Calibrazione SpO2 caricata: ${offset > 0 ? '+' : ''}${offset}%`)
       }
     }
@@ -164,20 +197,87 @@ export default function HealthMonitorPage() {
       const offset = parseInt(savedHrOffset, 10)
       if (!isNaN(offset) && offset >= HR_OFFSET_MIN && offset <= HR_OFFSET_MAX) {
         setHrCalibrationOffset(offset)
+        hrCalibrationOffsetRef.current = offset
         console.log(`🔧 Calibrazione HR caricata: ${offset > 0 ? '+' : ''}${offset} BPM`)
+      }
+    }
+
+    // Carica offset Pressione Sistolica
+    const savedBpSystolic = localStorage.getItem('linktop_bp_systolic_offset')
+    if (savedBpSystolic !== null) {
+      const offset = parseInt(savedBpSystolic, 10)
+      if (!isNaN(offset) && offset >= BP_SYSTOLIC_MIN && offset <= BP_SYSTOLIC_MAX) {
+        setBpSystolicOffset(offset)
+        bpSystolicOffsetRef.current = offset
+        console.log(`🔧 Calibrazione BP Sistolica caricata: ${offset > 0 ? '+' : ''}${offset} mmHg`)
+      }
+    }
+
+    // Carica offset Pressione Diastolica
+    const savedBpDiastolic = localStorage.getItem('linktop_bp_diastolic_offset')
+    if (savedBpDiastolic !== null) {
+      const offset = parseInt(savedBpDiastolic, 10)
+      if (!isNaN(offset) && offset >= BP_DIASTOLIC_MIN && offset <= BP_DIASTOLIC_MAX) {
+        setBpDiastolicOffset(offset)
+        bpDiastolicOffsetRef.current = offset
+        console.log(`🔧 Calibrazione BP Diastolica caricata: ${offset > 0 ? '+' : ''}${offset} mmHg`)
+      }
+    }
+
+    // Carica offset Temperatura
+    const savedTemp = localStorage.getItem('linktop_temperature_offset')
+    if (savedTemp !== null) {
+      const offset = parseFloat(savedTemp)
+      if (!isNaN(offset) && offset >= TEMP_OFFSET_MIN && offset <= TEMP_OFFSET_MAX) {
+        setTemperatureOffset(offset)
+        temperatureOffsetRef.current = offset
+        console.log(`🔧 Calibrazione Temperatura caricata: ${offset > 0 ? '+' : ''}${offset.toFixed(1)}°C`)
+      }
+    }
+
+    // Carica offset ECG
+    const savedEcg = localStorage.getItem('linktop_ecg_offset')
+    if (savedEcg !== null) {
+      const offset = parseInt(savedEcg, 10)
+      if (!isNaN(offset) && offset >= ECG_OFFSET_MIN && offset <= ECG_OFFSET_MAX) {
+        setEcgOffset(offset)
+        ecgOffsetRef.current = offset
+        console.log(`🔧 Calibrazione ECG caricata: ${offset > 0 ? '+' : ''}${offset}`)
       }
     }
   }, [])
 
   useEffect(() => {
-    // Salva offset SpO2 ogni volta che cambia
+    // Salva offset SpO2 ogni volta che cambia e sincronizza ref
     localStorage.setItem('linktop_spo2_calibration_offset', spo2CalibrationOffset.toString())
+    spo2CalibrationOffsetRef.current = spo2CalibrationOffset
   }, [spo2CalibrationOffset])
 
   useEffect(() => {
-    // Salva offset HR ogni volta che cambia
+    // Salva offset HR ogni volta che cambia e sincronizza ref
     localStorage.setItem('linktop_hr_calibration_offset', hrCalibrationOffset.toString())
+    hrCalibrationOffsetRef.current = hrCalibrationOffset
   }, [hrCalibrationOffset])
+
+  useEffect(() => {
+    localStorage.setItem('linktop_bp_systolic_offset', bpSystolicOffset.toString())
+    bpSystolicOffsetRef.current = bpSystolicOffset
+  }, [bpSystolicOffset])
+
+  useEffect(() => {
+    localStorage.setItem('linktop_bp_diastolic_offset', bpDiastolicOffset.toString())
+    bpDiastolicOffsetRef.current = bpDiastolicOffset
+  }, [bpDiastolicOffset])
+
+  useEffect(() => {
+    localStorage.setItem('linktop_temperature_offset', temperatureOffset.toString())
+    temperatureOffsetRef.current = temperatureOffset
+  }, [temperatureOffset])
+
+  useEffect(() => {
+    localStorage.setItem('linktop_ecg_offset', ecgOffset.toString())
+    ecgOffsetRef.current = ecgOffset
+  }, [ecgOffset])
 
   // Funzioni calibrazione SpO2
   const incrementSpo2Offset = useCallback(() => {
@@ -227,6 +327,106 @@ export default function HealthMonitorPage() {
     setHrCalibrationOffset(HR_OFFSET_DEFAULT)
     playBeep(1200, 150)
     console.log(`🔧 Offset HR resettato a default: ${HR_OFFSET_DEFAULT} BPM`)
+  }, [playBeep])
+
+  // Funzioni calibrazione Pressione Sistolica
+  const incrementBpSystolic = useCallback(() => {
+    setBpSystolicOffset(prev => {
+      const newValue = Math.min(prev + 1, BP_SYSTOLIC_MAX)
+      playBeep(1000, 100)
+      console.log(`🔧 Offset BP Sistolica: ${newValue > 0 ? '+' : ''}${newValue} mmHg`)
+      return newValue
+    })
+  }, [playBeep])
+
+  const decrementBpSystolic = useCallback(() => {
+    setBpSystolicOffset(prev => {
+      const newValue = Math.max(prev - 1, BP_SYSTOLIC_MIN)
+      playBeep(800, 100)
+      console.log(`🔧 Offset BP Sistolica: ${newValue > 0 ? '+' : ''}${newValue} mmHg`)
+      return newValue
+    })
+  }, [playBeep])
+
+  const resetBpSystolic = useCallback(() => {
+    setBpSystolicOffset(BP_SYSTOLIC_DEFAULT)
+    playBeep(1200, 150)
+    console.log(`🔧 Offset BP Sistolica resettato a default: ${BP_SYSTOLIC_DEFAULT} mmHg`)
+  }, [playBeep])
+
+  // Funzioni calibrazione Pressione Diastolica
+  const incrementBpDiastolic = useCallback(() => {
+    setBpDiastolicOffset(prev => {
+      const newValue = Math.min(prev + 1, BP_DIASTOLIC_MAX)
+      playBeep(1000, 100)
+      console.log(`🔧 Offset BP Diastolica: ${newValue > 0 ? '+' : ''}${newValue} mmHg`)
+      return newValue
+    })
+  }, [playBeep])
+
+  const decrementBpDiastolic = useCallback(() => {
+    setBpDiastolicOffset(prev => {
+      const newValue = Math.max(prev - 1, BP_DIASTOLIC_MIN)
+      playBeep(800, 100)
+      console.log(`🔧 Offset BP Diastolica: ${newValue > 0 ? '+' : ''}${newValue} mmHg`)
+      return newValue
+    })
+  }, [playBeep])
+
+  const resetBpDiastolic = useCallback(() => {
+    setBpDiastolicOffset(BP_DIASTOLIC_DEFAULT)
+    playBeep(1200, 150)
+    console.log(`🔧 Offset BP Diastolica resettato a default: ${BP_DIASTOLIC_DEFAULT} mmHg`)
+  }, [playBeep])
+
+  // Funzioni calibrazione Temperatura
+  const incrementTemperature = useCallback(() => {
+    setTemperatureOffset(prev => {
+      const newValue = Math.min(prev + TEMP_OFFSET_STEP, TEMP_OFFSET_MAX)
+      playBeep(1000, 100)
+      console.log(`🔧 Offset Temperatura: ${newValue > 0 ? '+' : ''}${newValue.toFixed(1)}°C`)
+      return parseFloat(newValue.toFixed(1))
+    })
+  }, [playBeep])
+
+  const decrementTemperature = useCallback(() => {
+    setTemperatureOffset(prev => {
+      const newValue = Math.max(prev - TEMP_OFFSET_STEP, TEMP_OFFSET_MIN)
+      playBeep(800, 100)
+      console.log(`🔧 Offset Temperatura: ${newValue > 0 ? '+' : ''}${newValue.toFixed(1)}°C`)
+      return parseFloat(newValue.toFixed(1))
+    })
+  }, [playBeep])
+
+  const resetTemperature = useCallback(() => {
+    setTemperatureOffset(TEMP_OFFSET_DEFAULT)
+    playBeep(1200, 150)
+    console.log(`🔧 Offset Temperatura resettato a default: ${TEMP_OFFSET_DEFAULT}°C`)
+  }, [playBeep])
+
+  // Funzioni calibrazione ECG
+  const incrementEcg = useCallback(() => {
+    setEcgOffset(prev => {
+      const newValue = Math.min(prev + 1, ECG_OFFSET_MAX)
+      playBeep(1000, 100)
+      console.log(`🔧 Offset ECG: ${newValue > 0 ? '+' : ''}${newValue}`)
+      return newValue
+    })
+  }, [playBeep])
+
+  const decrementEcg = useCallback(() => {
+    setEcgOffset(prev => {
+      const newValue = Math.max(prev - 1, ECG_OFFSET_MIN)
+      playBeep(800, 100)
+      console.log(`🔧 Offset ECG: ${newValue > 0 ? '+' : ''}${newValue}`)
+      return newValue
+    })
+  }, [playBeep])
+
+  const resetEcg = useCallback(() => {
+    setEcgOffset(ECG_OFFSET_DEFAULT)
+    playBeep(1200, 150)
+    console.log(`🔧 Offset ECG resettato a default: ${ECG_OFFSET_DEFAULT}`)
   }, [playBeep])
 
   // Funzione per calcolare la mediana
@@ -285,15 +485,22 @@ export default function HealthMonitorPage() {
     // Test reale dispositivo affidabile: 135/85 mmHg
     // MAP calcolato dal nostro algoritmo: 328
     // Fattori: 135/328=0.41, 85/328=0.26
-    const systolic = Math.round(map * 0.41)   // Calibrato su 135 mmHg
-    const diastolic = Math.round(map * 0.26)  // Calibrato su 85 mmHg
+    let systolic = Math.round(map * 0.41)   // Calibrato su 135 mmHg
+    let diastolic = Math.round(map * 0.26)  // Calibrato su 85 mmHg
+
+    // CALIBRAZIONE BP: Applica offset personalizzabili dall'utente
+    const systolicOffset = bpSystolicOffsetRef.current
+    const diastolicOffset = bpDiastolicOffsetRef.current
+    systolic = systolic + systolicOffset
+    diastolic = diastolic + diastolicOffset
 
     console.log('📊 Analisi BP Dettagliata:')
     console.log('   MAP (valore medio):', map)
     console.log('   Pressioni array (primi 20):', pressures.slice(0, 20))
     console.log('   Oscillazioni (prime 20):', oscillations.slice(0, 20))
     console.log('   maxOscillation:', maxOscillation, 'at index:', mapIndex)
-    console.log('   Risultati BP: Sistolica:', systolic, 'Diastolica:', diastolic)
+    console.log(`   🩺 BP Sistolica: raw=${systolic - systolicOffset} mmHg + offset(${systolicOffset > 0 ? '+' : ''}${systolicOffset} mmHg) = ${systolic} mmHg`)
+    console.log(`   🩺 BP Diastolica: raw=${diastolic - diastolicOffset} mmHg + offset(${diastolicOffset > 0 ? '+' : ''}${diastolicOffset} mmHg) = ${diastolic} mmHg`)
 
     const hr = oscillations.length > 0 ? Math.round((oscillations.length / (deflationPhase.length / 125)) * 60) : 0
 
@@ -429,7 +636,7 @@ export default function HealthMonitorPage() {
     // CALIBRAZIONE HR: Offset personalizzabile dall'utente
     // Default 0 BPM (nessuna correzione aggiuntiva)
     // Range: -10 BPM a +10 BPM per adattarsi a diversi dispositivi di riferimento
-    hr = hr + hrCalibrationOffset
+    hr = hr + hrCalibrationOffsetRef.current
 
     // SpO2
     const redSamples = red.slice(-150)
@@ -474,13 +681,15 @@ export default function HealthMonitorPage() {
       // CALIBRAZIONE SpO2: Offset personalizzabile dall'utente
       // Default +4% (calibrato con Apple Watch)
       // Range: -5% a +10% per adattarsi a diversi dispositivi di riferimento
-      let spo2 = avgSpo2 + spo2CalibrationOffset
+      let spo2 = avgSpo2 + spo2CalibrationOffsetRef.current
 
       // Clamp tra 90-100% (dopo calibrazione)
       spo2 = Math.max(90, Math.min(100, spo2))
 
-      console.log(`🫁 SpO2: raw=${avgSpo2}% + offset(${spo2CalibrationOffset > 0 ? '+' : ''}${spo2CalibrationOffset}%) = ${spo2}%`)
-      console.log(`💓 HR: corrected=${hr - hrCalibrationOffset} BPM + offset(${hrCalibrationOffset > 0 ? '+' : ''}${hrCalibrationOffset} BPM) = ${hr} BPM`)
+      const spo2Offset = spo2CalibrationOffsetRef.current
+      const hrOffset = hrCalibrationOffsetRef.current
+      console.log(`🫁 SpO2: raw=${avgSpo2}% + offset(${spo2Offset > 0 ? '+' : ''}${spo2Offset}%) = ${spo2}%`)
+      console.log(`💓 HR: corrected=${hr - hrOffset} BPM + offset(${hrOffset > 0 ? '+' : ''}${hrOffset} BPM) = ${hr} BPM`)
 
       const validHr = hr >= 40 && hr <= 150 ? hr : 0
 
@@ -488,7 +697,7 @@ export default function HealthMonitorPage() {
     }
 
     return { hr: 0, spo2: 0 }
-  }, [spo2CalibrationOffset, hrCalibrationOffset])
+  }, [])
 
   // Gestisce i dati ricevuti dalle notifiche BLE - CODICE COMPLETO DALLA PAGINA TEST
   const handleNotification = (event: any) => {
@@ -675,6 +884,13 @@ export default function HealthMonitorPage() {
           finalTemp = tempBT + (tempDiff * 0.05)
         }
 
+        // CALIBRAZIONE TEMPERATURA: Applica offset personalizzabile dall'utente
+        const tempOffset = temperatureOffsetRef.current
+        const rawTemp = finalTemp
+        finalTemp = finalTemp + tempOffset
+
+        console.log(`🌡️ Temperatura: raw=${rawTemp.toFixed(1)}°C + offset(${tempOffset > 0 ? '+' : ''}${tempOffset.toFixed(1)}°C) = ${finalTemp.toFixed(1)}°C`)
+
         if (finalTemp > 30 && finalTemp < 45) {
           setMeasurements(prev => ({ ...prev, bodyTemperature: finalTemp }))
           setStatus(`📊 Temperatura: ${finalTemp.toFixed(1)}°C (BT: ${tempBT.toFixed(1)}°C, ET: ${tempET.toFixed(1)}°C)`)
@@ -690,7 +906,20 @@ export default function HealthMonitorPage() {
     // ECG (0x85)
     else if (messageType === 0x85 || messageType === 133) {
       const payloadStart = 6
-      const waveData = Array.from(data.slice(payloadStart, data.length - 3))
+      const rawWaveData = Array.from(data.slice(payloadStart, data.length - 3))
+
+      // CALIBRAZIONE ECG: Applica fattore di scala all'ampiezza del segnale
+      // offset = 0 → factor = 1.0 (nessun cambiamento)
+      // offset = +5 → factor = 1.5 (ampiezza +50%)
+      // offset = -5 → factor = 0.5 (ampiezza -50%)
+      const ecgOffsetValue = ecgOffsetRef.current
+      const scaleFactor = 1.0 + (ecgOffsetValue * 0.1)
+      const waveData = rawWaveData.map(value => Math.round(value * scaleFactor))
+
+      if (ecgOffsetValue !== 0) {
+        console.log(`❤️ ECG: offset=${ecgOffsetValue} → scale factor=${scaleFactor.toFixed(2)}x`)
+      }
+
       setMeasurements(prev => ({
         ...prev,
         ecgWaveform: [...prev.ecgWaveform.slice(-99), ...waveData]
@@ -1503,16 +1732,24 @@ export default function HealthMonitorPage() {
                     <h4 className="text-lg font-semibold text-blue-400 mb-2">📊 Parametri Calibrabili</h4>
                     <div className="space-y-3 text-sm">
                       <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-3">
-                        <p className="font-semibold text-blue-300">SpO2 (Saturazione Ossigeno)</p>
+                        <p className="font-semibold text-blue-300">🫁 SpO2 (Saturazione Ossigeno)</p>
                         <p className="text-xs text-gray-400 mt-1">Range: -5% ~ +10% | Default: +4%</p>
                       </div>
                       <div className="bg-red-900/30 border border-red-500/30 rounded-lg p-3">
-                        <p className="font-semibold text-red-300">HR (Frequenza Cardiaca)</p>
+                        <p className="font-semibold text-red-300">💓 HR (Frequenza Cardiaca)</p>
                         <p className="text-xs text-gray-400 mt-1">Range: -10 BPM ~ +10 BPM | Default: 0 BPM</p>
                       </div>
-                      <div className="bg-gray-700/30 border border-gray-500/30 rounded-lg p-3">
-                        <p className="font-semibold text-gray-300">Pressione, Temperatura, ECG</p>
-                        <p className="text-xs text-gray-400 mt-1">Calibrazione disponibile in futuro</p>
+                      <div className="bg-purple-900/30 border border-purple-500/30 rounded-lg p-3">
+                        <p className="font-semibold text-purple-300">🩺 Pressione Sanguigna</p>
+                        <p className="text-xs text-gray-400 mt-1">Sistolica: -20 ~ +20 mmHg | Diastolica: -15 ~ +15 mmHg | Default: 0/0</p>
+                      </div>
+                      <div className="bg-orange-900/30 border border-orange-500/30 rounded-lg p-3">
+                        <p className="font-semibold text-orange-300">🌡️ Temperatura</p>
+                        <p className="text-xs text-gray-400 mt-1">Range: -2.0°C ~ +2.0°C (step 0.1) | Default: 0.0°C</p>
+                      </div>
+                      <div className="bg-yellow-900/30 border border-yellow-500/30 rounded-lg p-3">
+                        <p className="font-semibold text-yellow-300">❤️ ECG (Ampiezza)</p>
+                        <p className="text-xs text-gray-400 mt-1">Range: -10 ~ +10 | Default: 0</p>
                       </div>
                     </div>
                   </div>
@@ -1567,82 +1804,85 @@ export default function HealthMonitorPage() {
                       🫁 SpO2 + HR
                     </button>
 
-                    {/* Calibrazione SpO2 */}
-                    <div className="p-3 bg-gradient-to-br from-blue-900/30 to-cyan-900/30 border border-blue-500/30 rounded-lg">
-                      <p className="text-xs text-blue-300 font-semibold mb-2">🔧 SpO2</p>
-                      <div className="flex items-center gap-1 mb-2">
-                        <button
-                          onClick={decrementSpo2Offset}
-                          disabled={isMeasuring || spo2CalibrationOffset <= SPO2_OFFSET_MIN}
-                          className="w-8 h-8 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-lg flex items-center justify-center transition-all"
-                          title="Diminuisci -1%"
-                        >
-                          −
-                        </button>
-                        <div className="flex-1 px-2 py-1.5 bg-black/30 rounded text-center">
-                          <span className={`font-mono text-sm font-bold ${
-                            spo2CalibrationOffset === SPO2_OFFSET_DEFAULT ? 'text-green-400' : 'text-yellow-400'
-                          }`}>
-                            {spo2CalibrationOffset > 0 ? '+' : ''}{spo2CalibrationOffset}%
-                          </span>
+                    {/* Calibrazione SpO2 + HR in un unico box */}
+                    <div className="p-3 bg-gradient-to-br from-slate-900/40 to-slate-800/40 border border-slate-600/30 rounded-lg">
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* SpO2 */}
+                        <div>
+                          <p className="text-xs text-blue-300 font-semibold mb-2">🔧 SpO2</p>
+                          <div className="flex items-center gap-1 mb-2">
+                            <button
+                              onClick={decrementSpo2Offset}
+                              disabled={isMeasuring || spo2CalibrationOffset <= SPO2_OFFSET_MIN}
+                              className="w-7 h-7 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-sm flex items-center justify-center transition-all"
+                              title="Diminuisci -1%"
+                            >
+                              −
+                            </button>
+                            <div className="flex-1 px-1 py-1 bg-black/30 rounded text-center">
+                              <span className={`font-mono text-xs font-bold ${
+                                spo2CalibrationOffset === SPO2_OFFSET_DEFAULT ? 'text-green-400' : 'text-yellow-400'
+                              }`}>
+                                {spo2CalibrationOffset > 0 ? '+' : ''}{spo2CalibrationOffset}%
+                              </span>
+                            </div>
+                            <button
+                              onClick={incrementSpo2Offset}
+                              disabled={isMeasuring || spo2CalibrationOffset >= SPO2_OFFSET_MAX}
+                              className="w-7 h-7 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-sm flex items-center justify-center transition-all"
+                              title="Aumenta +1%"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button
+                            onClick={resetSpo2Offset}
+                            disabled={isMeasuring || spo2CalibrationOffset === SPO2_OFFSET_DEFAULT}
+                            className="w-full px-2 py-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 disabled:cursor-not-allowed text-white text-xs rounded font-semibold transition-all"
+                            title={spo2CalibrationOffset === SPO2_OFFSET_DEFAULT ? "Già al valore default" : `Reset a default (+${SPO2_OFFSET_DEFAULT}%)`}
+                          >
+                            Reset
+                          </button>
                         </div>
-                        <button
-                          onClick={incrementSpo2Offset}
-                          disabled={isMeasuring || spo2CalibrationOffset >= SPO2_OFFSET_MAX}
-                          className="w-8 h-8 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-lg flex items-center justify-center transition-all"
-                          title="Aumenta +1%"
-                        >
-                          +
-                        </button>
-                      </div>
-                      {spo2CalibrationOffset !== SPO2_OFFSET_DEFAULT && (
-                        <button
-                          onClick={resetSpo2Offset}
-                          disabled={isMeasuring}
-                          className="w-full px-2 py-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white text-xs rounded font-semibold transition-all"
-                        >
-                          Reset
-                        </button>
-                      )}
-                    </div>
 
-                    {/* Calibrazione HR */}
-                    <div className="p-3 bg-gradient-to-br from-red-900/30 to-pink-900/30 border border-red-500/30 rounded-lg">
-                      <p className="text-xs text-red-300 font-semibold mb-2">💓 HR</p>
-                      <div className="flex items-center gap-1 mb-2">
-                        <button
-                          onClick={decrementHrOffset}
-                          disabled={isMeasuring || hrCalibrationOffset <= HR_OFFSET_MIN}
-                          className="w-8 h-8 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-lg flex items-center justify-center transition-all"
-                          title="Diminuisci -1 BPM"
-                        >
-                          −
-                        </button>
-                        <div className="flex-1 px-2 py-1.5 bg-black/30 rounded text-center">
-                          <span className={`font-mono text-xs font-bold ${
-                            hrCalibrationOffset === HR_OFFSET_DEFAULT ? 'text-green-400' : 'text-yellow-400'
-                          }`}>
-                            {hrCalibrationOffset > 0 ? '+' : ''}{hrCalibrationOffset}
-                          </span>
+                        {/* HR */}
+                        <div>
+                          <p className="text-xs text-red-300 font-semibold mb-2">💓 HR</p>
+                          <div className="flex items-center gap-1 mb-2">
+                            <button
+                              onClick={decrementHrOffset}
+                              disabled={isMeasuring || hrCalibrationOffset <= HR_OFFSET_MIN}
+                              className="w-7 h-7 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-sm flex items-center justify-center transition-all"
+                              title="Diminuisci -1 BPM"
+                            >
+                              −
+                            </button>
+                            <div className="flex-1 px-1 py-1 bg-black/30 rounded text-center">
+                              <span className={`font-mono text-xs font-bold ${
+                                hrCalibrationOffset === HR_OFFSET_DEFAULT ? 'text-green-400' : 'text-yellow-400'
+                              }`}>
+                                {hrCalibrationOffset > 0 ? '+' : ''}{hrCalibrationOffset}
+                              </span>
+                            </div>
+                            <button
+                              onClick={incrementHrOffset}
+                              disabled={isMeasuring || hrCalibrationOffset >= HR_OFFSET_MAX}
+                              className="w-7 h-7 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-sm flex items-center justify-center transition-all"
+                              title="Aumenta +1 BPM"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button
+                            onClick={resetHrOffset}
+                            disabled={isMeasuring || hrCalibrationOffset === HR_OFFSET_DEFAULT}
+                            className="w-full px-2 py-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 disabled:cursor-not-allowed text-white text-xs rounded font-semibold transition-all"
+                            title={hrCalibrationOffset === HR_OFFSET_DEFAULT ? "Già al valore default" : `Reset a default (${HR_OFFSET_DEFAULT} BPM)`}
+                          >
+                            Reset
+                          </button>
                         </div>
-                        <button
-                          onClick={incrementHrOffset}
-                          disabled={isMeasuring || hrCalibrationOffset >= HR_OFFSET_MAX}
-                          className="w-8 h-8 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-lg flex items-center justify-center transition-all"
-                          title="Aumenta +1 BPM"
-                        >
-                          +
-                        </button>
                       </div>
-                      {hrCalibrationOffset !== HR_OFFSET_DEFAULT && (
-                        <button
-                          onClick={resetHrOffset}
-                          disabled={isMeasuring}
-                          className="w-full px-2 py-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white text-xs rounded font-semibold transition-all"
-                        >
-                          Reset
-                        </button>
-                      )}
                     </div>
                   </div>
 
@@ -1655,8 +1895,86 @@ export default function HealthMonitorPage() {
                     >
                       🩺 Pressione
                     </button>
-                    <div className="p-3 bg-gray-800/30 border border-gray-600/30 rounded-lg text-center">
-                      <p className="text-xs text-gray-400">Calibrazione futura</p>
+
+                    {/* Calibrazione Sistolica + Diastolica in un unico box */}
+                    <div className="p-3 bg-gradient-to-br from-slate-900/40 to-slate-800/40 border border-slate-600/30 rounded-lg">
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Sistolica */}
+                        <div>
+                          <p className="text-xs text-purple-300 font-semibold mb-2">🔧 Sistol</p>
+                          <div className="flex items-center gap-1 mb-2">
+                            <button
+                              onClick={decrementBpSystolic}
+                              disabled={isMeasuring || bpSystolicOffset <= BP_SYSTOLIC_MIN}
+                              className="w-7 h-7 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-sm flex items-center justify-center transition-all"
+                              title="Diminuisci -1 mmHg"
+                            >
+                              −
+                            </button>
+                            <div className="flex-1 px-1 py-1 bg-black/30 rounded text-center">
+                              <span className={`font-mono text-xs font-bold ${
+                                bpSystolicOffset === BP_SYSTOLIC_DEFAULT ? 'text-green-400' : 'text-yellow-400'
+                              }`}>
+                                {bpSystolicOffset > 0 ? '+' : ''}{bpSystolicOffset}
+                              </span>
+                            </div>
+                            <button
+                              onClick={incrementBpSystolic}
+                              disabled={isMeasuring || bpSystolicOffset >= BP_SYSTOLIC_MAX}
+                              className="w-7 h-7 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-sm flex items-center justify-center transition-all"
+                              title="Aumenta +1 mmHg"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button
+                            onClick={resetBpSystolic}
+                            disabled={isMeasuring || bpSystolicOffset === BP_SYSTOLIC_DEFAULT}
+                            className="w-full px-2 py-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 disabled:cursor-not-allowed text-white text-xs rounded font-semibold transition-all"
+                            title={bpSystolicOffset === BP_SYSTOLIC_DEFAULT ? "Già al valore default" : `Reset a default (${BP_SYSTOLIC_DEFAULT} mmHg)`}
+                          >
+                            Reset
+                          </button>
+                        </div>
+
+                        {/* Diastolica */}
+                        <div>
+                          <p className="text-xs text-pink-300 font-semibold mb-2">🔧 Diastol</p>
+                          <div className="flex items-center gap-1 mb-2">
+                            <button
+                              onClick={decrementBpDiastolic}
+                              disabled={isMeasuring || bpDiastolicOffset <= BP_DIASTOLIC_MIN}
+                              className="w-7 h-7 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-sm flex items-center justify-center transition-all"
+                              title="Diminuisci -1 mmHg"
+                            >
+                              −
+                            </button>
+                            <div className="flex-1 px-1 py-1 bg-black/30 rounded text-center">
+                              <span className={`font-mono text-xs font-bold ${
+                                bpDiastolicOffset === BP_DIASTOLIC_DEFAULT ? 'text-green-400' : 'text-yellow-400'
+                              }`}>
+                                {bpDiastolicOffset > 0 ? '+' : ''}{bpDiastolicOffset}
+                              </span>
+                            </div>
+                            <button
+                              onClick={incrementBpDiastolic}
+                              disabled={isMeasuring || bpDiastolicOffset >= BP_DIASTOLIC_MAX}
+                              className="w-7 h-7 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-sm flex items-center justify-center transition-all"
+                              title="Aumenta +1 mmHg"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button
+                            onClick={resetBpDiastolic}
+                            disabled={isMeasuring || bpDiastolicOffset === BP_DIASTOLIC_DEFAULT}
+                            className="w-full px-2 py-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 disabled:cursor-not-allowed text-white text-xs rounded font-semibold transition-all"
+                            title={bpDiastolicOffset === BP_DIASTOLIC_DEFAULT ? "Già al valore default" : `Reset a default (${BP_DIASTOLIC_DEFAULT} mmHg)`}
+                          >
+                            Reset
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -1669,8 +1987,43 @@ export default function HealthMonitorPage() {
                     >
                       🌡️ Temperatura
                     </button>
-                    <div className="p-3 bg-gray-800/30 border border-gray-600/30 rounded-lg text-center">
-                      <p className="text-xs text-gray-400">Calibrazione futura</p>
+
+                    {/* Calibrazione Temperatura */}
+                    <div className="p-3 bg-gradient-to-br from-orange-900/30 to-red-900/30 border border-orange-500/30 rounded-lg">
+                      <p className="text-xs text-orange-300 font-semibold mb-2">🔧 Temp</p>
+                      <div className="flex items-center gap-1 mb-2">
+                        <button
+                          onClick={decrementTemperature}
+                          disabled={isMeasuring || temperatureOffset <= TEMP_OFFSET_MIN}
+                          className="w-8 h-8 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-lg flex items-center justify-center transition-all"
+                          title="Diminuisci -0.1°C"
+                        >
+                          −
+                        </button>
+                        <div className="flex-1 px-2 py-1.5 bg-black/30 rounded text-center">
+                          <span className={`font-mono text-xs font-bold ${
+                            temperatureOffset === TEMP_OFFSET_DEFAULT ? 'text-green-400' : 'text-yellow-400'
+                          }`}>
+                            {temperatureOffset > 0 ? '+' : ''}{temperatureOffset.toFixed(1)}
+                          </span>
+                        </div>
+                        <button
+                          onClick={incrementTemperature}
+                          disabled={isMeasuring || temperatureOffset >= TEMP_OFFSET_MAX}
+                          className="w-8 h-8 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-lg flex items-center justify-center transition-all"
+                          title="Aumenta +0.1°C"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <button
+                        onClick={resetTemperature}
+                        disabled={isMeasuring || temperatureOffset === TEMP_OFFSET_DEFAULT}
+                        className="w-full px-2 py-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 disabled:cursor-not-allowed text-white text-xs rounded font-semibold transition-all"
+                        title={temperatureOffset === TEMP_OFFSET_DEFAULT ? "Già al valore default" : `Reset a default (${TEMP_OFFSET_DEFAULT}°C)`}
+                      >
+                        Reset
+                      </button>
                     </div>
                   </div>
 
@@ -1683,8 +2036,43 @@ export default function HealthMonitorPage() {
                     >
                       ❤️ ECG
                     </button>
-                    <div className="p-3 bg-gray-800/30 border border-gray-600/30 rounded-lg text-center">
-                      <p className="text-xs text-gray-400">Calibrazione futura</p>
+
+                    {/* Calibrazione ECG */}
+                    <div className="p-3 bg-gradient-to-br from-yellow-900/30 to-amber-900/30 border border-yellow-500/30 rounded-lg">
+                      <p className="text-xs text-yellow-300 font-semibold mb-2">🔧 ECG</p>
+                      <div className="flex items-center gap-1 mb-2">
+                        <button
+                          onClick={decrementEcg}
+                          disabled={isMeasuring || ecgOffset <= ECG_OFFSET_MIN}
+                          className="w-8 h-8 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-lg flex items-center justify-center transition-all"
+                          title="Diminuisci -1"
+                        >
+                          −
+                        </button>
+                        <div className="flex-1 px-2 py-1.5 bg-black/30 rounded text-center">
+                          <span className={`font-mono text-xs font-bold ${
+                            ecgOffset === ECG_OFFSET_DEFAULT ? 'text-green-400' : 'text-yellow-400'
+                          }`}>
+                            {ecgOffset > 0 ? '+' : ''}{ecgOffset}
+                          </span>
+                        </div>
+                        <button
+                          onClick={incrementEcg}
+                          disabled={isMeasuring || ecgOffset >= ECG_OFFSET_MAX}
+                          className="w-8 h-8 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-lg flex items-center justify-center transition-all"
+                          title="Aumenta +1"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <button
+                        onClick={resetEcg}
+                        disabled={isMeasuring || ecgOffset === ECG_OFFSET_DEFAULT}
+                        className="w-full px-2 py-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 disabled:cursor-not-allowed text-white text-xs rounded font-semibold transition-all"
+                        title={ecgOffset === ECG_OFFSET_DEFAULT ? "Già al valore default" : `Reset a default (${ECG_OFFSET_DEFAULT})`}
+                      >
+                        Reset
+                      </button>
                     </div>
                   </div>
                 </div>
