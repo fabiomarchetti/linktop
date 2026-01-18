@@ -11,10 +11,7 @@
     "dev": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "tunnel": "ssh -f -N -L 5433:localhost:5432 -i ~/.ssh/id_ed25519 root@91.99.141.225 || echo 'Tunnel già attivo o errore connessione'",
-    "tunnel:check": "lsof -i :5433 | grep LISTEN || echo 'Tunnel NON attivo'",
-    "tunnel:kill": "lsof -ti :5433 | xargs kill -9 2>/dev/null; pkill -f 'ssh -f -N -L 5433' 2>/dev/null && echo 'Tutti i tunnel chiusi' || echo 'Nessun tunnel attivo'"
+    "lint": "next lint"
   },
   "keywords": [],
   "author": "",
