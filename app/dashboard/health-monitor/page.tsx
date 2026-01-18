@@ -59,6 +59,20 @@ export default function HealthMonitorPage() {
   const [bluetoothDevice, setBluetoothDevice] = useState<BluetoothDevice | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected')
   const [errorMessage, setErrorMessage] = useState<string>('')
+  const [showCalibrationHelp, setShowCalibrationHelp] = useState(false)
+
+  // ============================================================================
+  // CALIBRAZIONE DINAMICA - Offset personalizzabili per SpO2 e HR
+  // ============================================================================
+  const [spo2CalibrationOffset, setSpo2CalibrationOffset] = useState<number>(4) // Default +4% (Apple Watch calibration)
+  const SPO2_OFFSET_MIN = -5
+  const SPO2_OFFSET_MAX = 10
+  const SPO2_OFFSET_DEFAULT = 4
+
+  const [hrCalibrationOffset, setHrCalibrationOffset] = useState<number>(0) // Default 0 BPM (nessuna correzione)
+  const HR_OFFSET_MIN = -10
+  const HR_OFFSET_MAX = 10
+  const HR_OFFSET_DEFAULT = 0
 
   // Timer per barra progresso SpO2
   const [spo2Progress, setSpo2Progress] = useState(0)
@@ -129,6 +143,91 @@ export default function HealthMonitorPage() {
       console.warn('Beep non disponibile:', error)
     }
   }, [])
+
+  // ============================================================================
+  // CALIBRAZIONE: Carica/Salva offset da localStorage
+  // ============================================================================
+  useEffect(() => {
+    // Carica offset SpO2 salvato al mount
+    const savedSpo2Offset = localStorage.getItem('linktop_spo2_calibration_offset')
+    if (savedSpo2Offset !== null) {
+      const offset = parseInt(savedSpo2Offset, 10)
+      if (!isNaN(offset) && offset >= SPO2_OFFSET_MIN && offset <= SPO2_OFFSET_MAX) {
+        setSpo2CalibrationOffset(offset)
+        console.log(`🔧 Calibrazione SpO2 caricata: ${offset > 0 ? '+' : ''}${offset}%`)
+      }
+    }
+
+    // Carica offset HR salvato al mount
+    const savedHrOffset = localStorage.getItem('linktop_hr_calibration_offset')
+    if (savedHrOffset !== null) {
+      const offset = parseInt(savedHrOffset, 10)
+      if (!isNaN(offset) && offset >= HR_OFFSET_MIN && offset <= HR_OFFSET_MAX) {
+        setHrCalibrationOffset(offset)
+        console.log(`🔧 Calibrazione HR caricata: ${offset > 0 ? '+' : ''}${offset} BPM`)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    // Salva offset SpO2 ogni volta che cambia
+    localStorage.setItem('linktop_spo2_calibration_offset', spo2CalibrationOffset.toString())
+  }, [spo2CalibrationOffset])
+
+  useEffect(() => {
+    // Salva offset HR ogni volta che cambia
+    localStorage.setItem('linktop_hr_calibration_offset', hrCalibrationOffset.toString())
+  }, [hrCalibrationOffset])
+
+  // Funzioni calibrazione SpO2
+  const incrementSpo2Offset = useCallback(() => {
+    setSpo2CalibrationOffset(prev => {
+      const newValue = Math.min(prev + 1, SPO2_OFFSET_MAX)
+      playBeep(1000, 100)
+      console.log(`🔧 Offset SpO2: ${newValue > 0 ? '+' : ''}${newValue}%`)
+      return newValue
+    })
+  }, [playBeep])
+
+  const decrementSpo2Offset = useCallback(() => {
+    setSpo2CalibrationOffset(prev => {
+      const newValue = Math.max(prev - 1, SPO2_OFFSET_MIN)
+      playBeep(800, 100)
+      console.log(`🔧 Offset SpO2: ${newValue > 0 ? '+' : ''}${newValue}%`)
+      return newValue
+    })
+  }, [playBeep])
+
+  const resetSpo2Offset = useCallback(() => {
+    setSpo2CalibrationOffset(SPO2_OFFSET_DEFAULT)
+    playBeep(1200, 150)
+    console.log(`🔧 Offset SpO2 resettato a default: +${SPO2_OFFSET_DEFAULT}%`)
+  }, [playBeep])
+
+  // Funzioni calibrazione HR
+  const incrementHrOffset = useCallback(() => {
+    setHrCalibrationOffset(prev => {
+      const newValue = Math.min(prev + 1, HR_OFFSET_MAX)
+      playBeep(1000, 100)
+      console.log(`🔧 Offset HR: ${newValue > 0 ? '+' : ''}${newValue} BPM`)
+      return newValue
+    })
+  }, [playBeep])
+
+  const decrementHrOffset = useCallback(() => {
+    setHrCalibrationOffset(prev => {
+      const newValue = Math.max(prev - 1, HR_OFFSET_MIN)
+      playBeep(800, 100)
+      console.log(`🔧 Offset HR: ${newValue > 0 ? '+' : ''}${newValue} BPM`)
+      return newValue
+    })
+  }, [playBeep])
+
+  const resetHrOffset = useCallback(() => {
+    setHrCalibrationOffset(HR_OFFSET_DEFAULT)
+    playBeep(1200, 150)
+    console.log(`🔧 Offset HR resettato a default: ${HR_OFFSET_DEFAULT} BPM`)
+  }, [playBeep])
 
   // Funzione per calcolare la mediana
   const calculateMedian = useCallback((values: number[]): number => {
@@ -327,6 +426,11 @@ export default function HealthMonitorPage() {
     const hrCorrected = Math.round(hr * 0.64)
     hr = hrCorrected
 
+    // CALIBRAZIONE HR: Offset personalizzabile dall'utente
+    // Default 0 BPM (nessuna correzione aggiuntiva)
+    // Range: -10 BPM a +10 BPM per adattarsi a diversi dispositivi di riferimento
+    hr = hr + hrCalibrationOffset
+
     // SpO2
     const redSamples = red.slice(-150)
     const redMean = redSamples.reduce((a, b) => a + b, 0) / redSamples.length
@@ -367,14 +471,16 @@ export default function HealthMonitorPage() {
         spo2HistoryRef.current.reduce((a, b) => a + b, 0) / spo2HistoryRef.current.length
       )
 
-      // CALIBRAZIONE SpO2: Offset calibrato con Apple Watch
-      // Test reale: HC03=94%, Apple Watch=98% → Offset +4%
-      let spo2 = avgSpo2 + 4
+      // CALIBRAZIONE SpO2: Offset personalizzabile dall'utente
+      // Default +4% (calibrato con Apple Watch)
+      // Range: -5% a +10% per adattarsi a diversi dispositivi di riferimento
+      let spo2 = avgSpo2 + spo2CalibrationOffset
 
       // Clamp tra 90-100% (dopo calibrazione)
       spo2 = Math.max(90, Math.min(100, spo2))
 
-      console.log(`🫁 SpO2: raw=${avgSpo2}% → calibrato=${spo2}%`)
+      console.log(`🫁 SpO2: raw=${avgSpo2}% + offset(${spo2CalibrationOffset > 0 ? '+' : ''}${spo2CalibrationOffset}%) = ${spo2}%`)
+      console.log(`💓 HR: corrected=${hr - hrCalibrationOffset} BPM + offset(${hrCalibrationOffset > 0 ? '+' : ''}${hrCalibrationOffset} BPM) = ${hr} BPM`)
 
       const validHr = hr >= 40 && hr <= 150 ? hr : 0
 
@@ -382,7 +488,7 @@ export default function HealthMonitorPage() {
     }
 
     return { hr: 0, spo2: 0 }
-  }, [])
+  }, [spo2CalibrationOffset, hrCalibrationOffset])
 
   // Gestisce i dati ricevuti dalle notifiche BLE - CODICE COMPLETO DALLA PAGINA TEST
   const handleNotification = (event: any) => {
@@ -1358,53 +1464,241 @@ export default function HealthMonitorPage() {
             </div>
           )}
 
+          {/* Calibration Help Modal */}
+          {showCalibrationHelp && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowCalibrationHelp(false)}>
+              <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-white/20 rounded-2xl p-8 max-w-2xl mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-start justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-white">🔧 Guida Calibrazione</h3>
+                  <button
+                    onClick={() => setShowCalibrationHelp(false)}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="space-y-6 text-gray-300">
+                  <div>
+                    <h4 className="text-lg font-semibold text-blue-400 mb-2">💡 Cos'è la calibrazione?</h4>
+                    <p className="text-sm leading-relaxed">
+                      La calibrazione ti permette di correggere i valori misurati dal dispositivo LINKTOP confrontandoli con un dispositivo di riferimento (Apple Watch, smartwatch medico, pulsossimetro professionale, ecc.).
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-lg font-semibold text-blue-400 mb-2">🎯 Come calibrare?</h4>
+                    <ol className="list-decimal list-inside space-y-2 text-sm">
+                      <li>Effettua una misurazione con il dispositivo LINKTOP</li>
+                      <li>Contemporaneamente misura lo stesso parametro con il tuo dispositivo di riferimento</li>
+                      <li>Confronta i valori ottenuti</li>
+                      <li>Usa i pulsanti <strong>+</strong> e <strong>−</strong> per regolare l'offset fino a far coincidere i valori</li>
+                      <li>L'offset viene salvato automaticamente e applicato alle prossime misurazioni</li>
+                    </ol>
+                  </div>
+
+                  <div>
+                    <h4 className="text-lg font-semibold text-blue-400 mb-2">📊 Parametri Calibrabili</h4>
+                    <div className="space-y-3 text-sm">
+                      <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-3">
+                        <p className="font-semibold text-blue-300">SpO2 (Saturazione Ossigeno)</p>
+                        <p className="text-xs text-gray-400 mt-1">Range: -5% ~ +10% | Default: +4%</p>
+                      </div>
+                      <div className="bg-red-900/30 border border-red-500/30 rounded-lg p-3">
+                        <p className="font-semibold text-red-300">HR (Frequenza Cardiaca)</p>
+                        <p className="text-xs text-gray-400 mt-1">Range: -10 BPM ~ +10 BPM | Default: 0 BPM</p>
+                      </div>
+                      <div className="bg-gray-700/30 border border-gray-500/30 rounded-lg p-3">
+                        <p className="font-semibold text-gray-300">Pressione, Temperatura, ECG</p>
+                        <p className="text-xs text-gray-400 mt-1">Calibrazione disponibile in futuro</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-lg font-semibold text-blue-400 mb-2">🔄 Reset</h4>
+                    <p className="text-sm leading-relaxed">
+                      Clicca sul pulsante <strong>Reset</strong> per ripristinare i valori di default ottimizzati durante i test con Apple Watch.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setShowCalibrationHelp(false)}
+                  className="mt-6 w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-bold hover:opacity-90 transition-all"
+                >
+                  Ho Capito
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Control Panel */}
           {device.isConnected && (
             <>
-              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 mb-6 shadow-2xl">
-                <h2 className="text-2xl font-bold text-white mb-6">📊 Controlli Misurazione</h2>
+              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6 mb-6 shadow-2xl">
+                {/* Header con bottone aiuto */}
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-white">📊 Controlli Misurazione</h2>
+                  <button
+                    onClick={() => setShowCalibrationHelp(true)}
+                    className="px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg font-semibold text-sm transition-all border border-blue-500/30 flex items-center gap-2"
+                    title="Guida calibrazione"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Aiuto
+                  </button>
+                </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <button
-                    onClick={() => startMeasurement('SpO2')}
-                    disabled={isMeasuring}
-                    className="px-6 py-4 bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all shadow-lg"
-                  >
-                    🫁 SpO2 + HR
-                  </button>
-                  <button
-                    onClick={() => startMeasurement('Pressione')}
-                    disabled={isMeasuring}
-                    className="px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all shadow-lg"
-                  >
-                    🩺 Pressione
-                  </button>
-                  <button
-                    onClick={() => startMeasurement('Temperatura')}
-                    disabled={isMeasuring}
-                    className="px-6 py-4 bg-gradient-to-r from-red-500 to-orange-600 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all shadow-lg"
-                  >
-                    🌡️ Temperatura
-                  </button>
-                  <button
-                    onClick={() => startMeasurement('ECG')}
-                    disabled={isMeasuring}
-                    className="px-6 py-4 bg-gradient-to-r from-yellow-500 to-amber-600 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all shadow-lg"
-                  >
-                    ❤️ ECG
-                  </button>
+                {/* Grid 4 colonne: Bottone + Calibrazione */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* COLONNA 1: SpO2 + HR */}
+                  <div className="flex flex-col gap-3">
+                    {/* Bottone SpO2 */}
+                    <button
+                      onClick={() => startMeasurement('SpO2')}
+                      disabled={isMeasuring}
+                      className="px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all shadow-lg text-center"
+                    >
+                      🫁 SpO2 + HR
+                    </button>
+
+                    {/* Calibrazione SpO2 */}
+                    <div className="p-3 bg-gradient-to-br from-blue-900/30 to-cyan-900/30 border border-blue-500/30 rounded-lg">
+                      <p className="text-xs text-blue-300 font-semibold mb-2">🔧 SpO2</p>
+                      <div className="flex items-center gap-1 mb-2">
+                        <button
+                          onClick={decrementSpo2Offset}
+                          disabled={isMeasuring || spo2CalibrationOffset <= SPO2_OFFSET_MIN}
+                          className="w-8 h-8 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-lg flex items-center justify-center transition-all"
+                          title="Diminuisci -1%"
+                        >
+                          −
+                        </button>
+                        <div className="flex-1 px-2 py-1.5 bg-black/30 rounded text-center">
+                          <span className={`font-mono text-sm font-bold ${
+                            spo2CalibrationOffset === SPO2_OFFSET_DEFAULT ? 'text-green-400' : 'text-yellow-400'
+                          }`}>
+                            {spo2CalibrationOffset > 0 ? '+' : ''}{spo2CalibrationOffset}%
+                          </span>
+                        </div>
+                        <button
+                          onClick={incrementSpo2Offset}
+                          disabled={isMeasuring || spo2CalibrationOffset >= SPO2_OFFSET_MAX}
+                          className="w-8 h-8 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-lg flex items-center justify-center transition-all"
+                          title="Aumenta +1%"
+                        >
+                          +
+                        </button>
+                      </div>
+                      {spo2CalibrationOffset !== SPO2_OFFSET_DEFAULT && (
+                        <button
+                          onClick={resetSpo2Offset}
+                          disabled={isMeasuring}
+                          className="w-full px-2 py-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white text-xs rounded font-semibold transition-all"
+                        >
+                          Reset
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Calibrazione HR */}
+                    <div className="p-3 bg-gradient-to-br from-red-900/30 to-pink-900/30 border border-red-500/30 rounded-lg">
+                      <p className="text-xs text-red-300 font-semibold mb-2">💓 HR</p>
+                      <div className="flex items-center gap-1 mb-2">
+                        <button
+                          onClick={decrementHrOffset}
+                          disabled={isMeasuring || hrCalibrationOffset <= HR_OFFSET_MIN}
+                          className="w-8 h-8 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-lg flex items-center justify-center transition-all"
+                          title="Diminuisci -1 BPM"
+                        >
+                          −
+                        </button>
+                        <div className="flex-1 px-2 py-1.5 bg-black/30 rounded text-center">
+                          <span className={`font-mono text-xs font-bold ${
+                            hrCalibrationOffset === HR_OFFSET_DEFAULT ? 'text-green-400' : 'text-yellow-400'
+                          }`}>
+                            {hrCalibrationOffset > 0 ? '+' : ''}{hrCalibrationOffset}
+                          </span>
+                        </div>
+                        <button
+                          onClick={incrementHrOffset}
+                          disabled={isMeasuring || hrCalibrationOffset >= HR_OFFSET_MAX}
+                          className="w-8 h-8 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded font-bold text-lg flex items-center justify-center transition-all"
+                          title="Aumenta +1 BPM"
+                        >
+                          +
+                        </button>
+                      </div>
+                      {hrCalibrationOffset !== HR_OFFSET_DEFAULT && (
+                        <button
+                          onClick={resetHrOffset}
+                          disabled={isMeasuring}
+                          className="w-full px-2 py-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-800 text-white text-xs rounded font-semibold transition-all"
+                        >
+                          Reset
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* COLONNA 2: Pressione */}
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={() => startMeasurement('Pressione')}
+                      disabled={isMeasuring}
+                      className="px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all shadow-lg text-center"
+                    >
+                      🩺 Pressione
+                    </button>
+                    <div className="p-3 bg-gray-800/30 border border-gray-600/30 rounded-lg text-center">
+                      <p className="text-xs text-gray-400">Calibrazione futura</p>
+                    </div>
+                  </div>
+
+                  {/* COLONNA 3: Temperatura */}
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={() => startMeasurement('Temperatura')}
+                      disabled={isMeasuring}
+                      className="px-4 py-3 bg-gradient-to-r from-red-500 to-orange-600 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all shadow-lg text-center"
+                    >
+                      🌡️ Temperatura
+                    </button>
+                    <div className="p-3 bg-gray-800/30 border border-gray-600/30 rounded-lg text-center">
+                      <p className="text-xs text-gray-400">Calibrazione futura</p>
+                    </div>
+                  </div>
+
+                  {/* COLONNA 4: ECG */}
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={() => startMeasurement('ECG')}
+                      disabled={isMeasuring}
+                      className="px-4 py-3 bg-gradient-to-r from-yellow-500 to-amber-600 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all shadow-lg text-center"
+                    >
+                      ❤️ ECG
+                    </button>
+                    <div className="p-3 bg-gray-800/30 border border-gray-600/30 rounded-lg text-center">
+                      <p className="text-xs text-gray-400">Calibrazione futura</p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Barra progresso SpO2 */}
                 {spo2Progress > 0 && (
-                  <div className="mt-4">
-                    <div className="w-full h-4 bg-blue-900/30 rounded-full overflow-hidden">
+                  <div className="mt-6">
+                    <div className="w-full h-3 bg-blue-900/30 rounded-full overflow-hidden">
                       <div
                         className={`h-full transition-all duration-100 ${spo2Progress >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
                         style={{ width: `${spo2Progress}%` }}
                       />
                     </div>
-                    <p className={`text-center mt-2 font-semibold ${spo2Progress >= 100 ? 'text-green-300' : 'text-blue-300'}`}>
+                    <p className={`text-center mt-2 text-sm font-semibold ${spo2Progress >= 100 ? 'text-green-300' : 'text-blue-300'}`}>
                       {spo2Progress < 100
                         ? `⏱️ Mantieni il dito fermo: ${Math.ceil(MEASUREMENT_DURATION - (spo2Progress / 100 * MEASUREMENT_DURATION))}s`
                         : '✅ Misurazione completata!'}
@@ -1412,21 +1706,21 @@ export default function HealthMonitorPage() {
                   </div>
                 )}
 
+                {/* Bottoni azione */}
                 {isMeasuring && (
                   <button
                     onClick={stopMeasurement}
-                    className="w-full mt-4 px-6 py-4 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg"
+                    className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg"
                   >
                     <Square className="w-5 h-5" />
                     FERMA MISURAZIONE
                   </button>
                 )}
 
-                {/* Pulsante Spegni LED - visibile quando NON sta misurando */}
                 {!isMeasuring && (
                   <button
                     onClick={turnOffLED}
-                    className="w-full mt-4 px-6 py-4 bg-gradient-to-r from-yellow-600 to-orange-600 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg"
+                    className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-yellow-600 to-orange-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg"
                     title="Spegni il LED del dispositivo senza disconnettere"
                   >
                     💡 Spegni LED

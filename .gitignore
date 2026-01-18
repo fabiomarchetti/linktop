@@ -44,3 +44,4 @@ doc/
 *.sql
 *.md
 !README.md
+.claude/
