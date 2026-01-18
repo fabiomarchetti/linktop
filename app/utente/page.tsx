@@ -110,72 +110,74 @@ export default function UtenteLoginPage() {
         </div>
       </div>
 
-      {/* Login Card */}
-      <div className="relative z-10 w-full max-w-md">
-        <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 md:p-10">
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-teal-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg mb-4">
-              <Heart className="w-10 h-10 text-white" />
+      {/* Login Card - Ottimizzato per tablet (più largo, meno alto) */}
+      <div className="relative z-10 w-full max-w-3xl">
+        <div className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-6 md:p-8">
+          {/* Logo compatto */}
+          <div className="text-center mb-6">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-teal-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg mb-3">
+              <Heart className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-1">
               LINKTOP
             </h1>
-            <p className="text-teal-100 text-lg">Health Monitor</p>
+            <p className="text-teal-100 text-base">Health Monitor</p>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-500/20 border border-red-400/30 rounded-xl flex items-center gap-3">
-              <AlertCircle className="w-6 h-6 text-red-300 flex-shrink-0" />
-              <p className="text-red-100 font-semibold text-lg">{error}</p>
+            <div className="mb-4 p-3 bg-red-500/20 border border-red-400/30 rounded-xl flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-red-300 flex-shrink-0" />
+              <p className="text-red-100 font-semibold text-base">{error}</p>
             </div>
           )}
 
-          {/* Login Form */}
-          <form onSubmit={handleLogin} className="space-y-6">
-            {/* Codice Fiscale */}
-            <div>
-              <label className="block text-white text-xl font-semibold mb-3">
-                Codice Fiscale
-              </label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-teal-300" />
-                <input
-                  type="text"
-                  value={codiceFiscale}
-                  onChange={(e) =>
-                    setCodiceFiscale(e.target.value.toUpperCase())
-                  }
-                  maxLength={16}
-                  required
-                  className="w-full pl-14 pr-4 py-5 text-xl bg-white/20 border-2 border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:border-teal-300 focus:bg-white/25 transition-all uppercase"
-                  placeholder="RSSMRA80A01H501X"
-                  autoComplete="off"
-                />
+          {/* Login Form - Layout orizzontale su tablet */}
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Codice Fiscale */}
+              <div>
+                <label className="block text-white text-lg font-semibold mb-2">
+                  Codice Fiscale
+                </label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-teal-300" />
+                  <input
+                    type="text"
+                    value={codiceFiscale}
+                    onChange={(e) =>
+                      setCodiceFiscale(e.target.value.toUpperCase())
+                    }
+                    maxLength={16}
+                    required
+                    className="w-full pl-12 pr-4 py-4 text-lg bg-white/20 border-2 border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:border-teal-300 focus:bg-white/25 transition-all uppercase"
+                    placeholder="RSSMRA80A01H501X"
+                    autoComplete="off"
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Password */}
-            <div>
-              <label className="block text-white text-xl font-semibold mb-3">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-teal-300" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value.toLowerCase())}
-                  required
-                  className="w-full pl-14 pr-4 py-5 text-xl bg-white/20 border-2 border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:border-teal-300 focus:bg-white/25 transition-all lowercase"
-                  placeholder="••••••"
-                  autoComplete="off"
-                />
+              {/* Password */}
+              <div>
+                <label className="block text-white text-lg font-semibold mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-teal-300" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value.toLowerCase())}
+                    required
+                    className="w-full pl-12 pr-4 py-4 text-lg bg-white/20 border-2 border-white/30 rounded-2xl text-white placeholder-white/60 focus:outline-none focus:border-teal-300 focus:bg-white/25 transition-all lowercase"
+                    placeholder="••••••"
+                    autoComplete="off"
+                  />
+                </div>
+                <p className="text-teal-100 text-xs mt-1">
+                  Prime 6 lettere del CF
+                </p>
               </div>
-              <p className="text-teal-100 text-sm mt-2">
-                Prime 6 lettere del codice fiscale
-              </p>
             </div>
 
             {/* Remember CF */}
@@ -185,9 +187,9 @@ export default function UtenteLoginPage() {
                 id="remember"
                 checked={rememberCF}
                 onChange={(e) => setRememberCF(e.target.checked)}
-                className="w-6 h-6 rounded border-2 border-white/30 bg-white/20 text-teal-500 focus:ring-2 focus:ring-teal-300"
+                className="w-5 h-5 rounded border-2 border-white/30 bg-white/20 text-teal-500 focus:ring-2 focus:ring-teal-300"
               />
-              <label htmlFor="remember" className="text-white text-lg">
+              <label htmlFor="remember" className="text-white text-base">
                 Ricorda il mio codice fiscale
               </label>
             </div>
@@ -196,23 +198,22 @@ export default function UtenteLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-2xl font-bold text-2xl shadow-lg hover:shadow-xl hover:from-teal-600 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+              className="w-full py-4 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-2xl font-bold text-xl shadow-lg hover:shadow-xl hover:from-teal-600 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
             >
               {loading ? (
-                <div className="w-7 h-7 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 <>
-                  <LogIn className="w-7 h-7" />
+                  <LogIn className="w-6 h-6" />
                   Accedi
                 </>
               )}
             </button>
           </form>
 
-          {/* Help Text */}
-          <div className="mt-8 text-center text-white/80 text-base">
-            <p>Non ricordi la password?</p>
-            <p className="mt-1">Contatta il tuo operatore sanitario</p>
+          {/* Help Text compatto */}
+          <div className="mt-4 text-center text-white/80 text-sm">
+            <p>Non ricordi la password? Contatta il tuo operatore sanitario</p>
           </div>
         </div>
 
