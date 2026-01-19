@@ -26,6 +26,7 @@ interface MenuItem {
   label: string;
   href: string;
   dividerAfter?: boolean;
+  allowedRoles?: string[]; // Lista dei ruoli che possono vedere questa voce
 }
 
 const menuItems: MenuItem[] = [
@@ -40,6 +41,7 @@ const menuItems: MenuItem[] = [
     label: "Gestione Staff",
     href: "/dashboard/users",
     dividerAfter: true,
+    allowedRoles: ["sviluppatore"], // Solo lo sviluppatore può vedere questa voce
   },
   {
     icon: <Heart className="w-5 h-5" />,
@@ -97,6 +99,16 @@ export default function Sidebar() {
 
   if (!user) return null;
 
+  // Filtra i menu items in base al ruolo dell'utente
+  const filteredMenuItems = menuItems.filter(item => {
+    // Se non ci sono ruoli specificati, la voce è visibile a tutti
+    if (!item.allowedRoles || item.allowedRoles.length === 0) {
+      return true;
+    }
+    // Altrimenti verifica se il ruolo dell'utente è nella lista dei ruoli permessi
+    return item.allowedRoles.includes(user.ruolo);
+  });
+
   return (
     <aside
       className={`fixed left-0 top-0 h-full bg-white/5 backdrop-blur-xl border-r border-white/10 transition-all duration-300 z-20 ${
@@ -143,7 +155,7 @@ export default function Sidebar() {
 
         {/* Menu Items */}
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          {menuItems.map((item, index) => (
+          {filteredMenuItems.map((item, index) => (
             <div key={item.href}>
               <SidebarMenuItem
                 icon={item.icon}
