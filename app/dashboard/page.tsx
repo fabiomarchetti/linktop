@@ -1,14 +1,28 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Sidebar from '@/components/Sidebar'
 import { Activity, Users, Heart, Stethoscope, Eye, TrendingUp } from 'lucide-react'
 
+interface DashboardStats {
+  pazienti_totali: number
+  dispositivi_attivi: number
+  misurazioni_oggi: number
+  alert_attivi: number
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const { user, isAuthenticated } = useAuth()
+  const [stats, setStats] = useState<DashboardStats>({
+    pazienti_totali: 0,
+    dispositivi_attivi: 0,
+    misurazioni_oggi: 0,
+    alert_attivi: 0
+  })
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -16,33 +30,53 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated, router])
 
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/dashboard/stats')
+        const data = await response.json()
+        if (data.success) {
+          setStats(data.stats)
+        }
+      } catch (error) {
+        console.error('Errore caricamento statistiche:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (isAuthenticated) {
+      fetchStats()
+    }
+  }, [isAuthenticated])
+
   if (!user) {
     return null
   }
 
-  const stats = [
+  const statsCards = [
     {
       icon: <Users className="w-8 h-8" />,
       label: 'Pazienti Totali',
-      value: '0',
+      value: loading ? '...' : stats.pazienti_totali.toString(),
       color: 'from-blue-500 to-blue-600',
     },
     {
       icon: <Activity className="w-8 h-8" />,
       label: 'Dispositivi Attivi',
-      value: '0',
+      value: loading ? '...' : stats.dispositivi_attivi.toString(),
       color: 'from-emerald-500 to-emerald-600',
     },
     {
       icon: <Heart className="w-8 h-8" />,
       label: 'Misurazioni Oggi',
-      value: '0',
+      value: loading ? '...' : stats.misurazioni_oggi.toString(),
       color: 'from-red-500 to-red-600',
     },
     {
       icon: <TrendingUp className="w-8 h-8" />,
       label: 'Alert Attivi',
-      value: '0',
+      value: loading ? '...' : stats.alert_attivi.toString(),
       color: 'from-orange-500 to-orange-600',
     },
   ]
@@ -64,7 +98,7 @@ export default function DashboardPage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
+          {statsCards.map((stat, index) => (
             <div
               key={index}
               className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 hover:border-emerald-500/50 transition-all"
