@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Heart, Stethoscope, Eye, LogOut, Mic, Volume2 } from 'lucide-react'
+import { Heart, Stethoscope, Eye, LogOut, Mic, Volume2, Settings } from 'lucide-react'
 
 interface Utente {
   id: number
@@ -16,6 +16,7 @@ export default function UtenteHomePage() {
   const [utente, setUtente] = useState<Utente | null>(null)
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
+  const [destinationMessage, setDestinationMessage] = useState('')
   const [micPermissionGranted, setMicPermissionGranted] = useState(false)
   const recognitionRef = useRef<any>(null)
   const synthRef = useRef<any>(null)
@@ -198,6 +199,7 @@ export default function UtenteHomePage() {
       try {
         console.log('🚀 Trying to start recognition...')
         setTranscript('')
+        setDestinationMessage('')
         recognitionRef.current.start()
         setIsListening(true)
         console.log('✅ Recognition start() called successfully')
@@ -224,6 +226,7 @@ export default function UtenteHomePage() {
       text.includes('battito')
     ) {
       console.log('✅ Match: Heart Monitor (1)')
+      setDestinationMessage('Monitor Cardiaco')
       speak('Ti porto al monitor cardiaco')
       setTimeout(() => {
         console.log('🚀 Navigating to heart-monitor')
@@ -242,6 +245,7 @@ export default function UtenteHomePage() {
       text.includes('polmoni')
     ) {
       console.log('✅ Match: Stetoscopio (2)')
+      setDestinationMessage('Stetoscopio')
       speak('Ti porto allo stetoscopio')
       setTimeout(() => {
         console.log('🚀 Navigating to stetoscopio')
@@ -257,6 +261,7 @@ export default function UtenteHomePage() {
       text.includes('terza')
     ) {
       console.log('⚠️ Match: Placeholder (3) - Non disponibile')
+      setDestinationMessage('Funzione non disponibile')
       speak('Questa funzione non è ancora disponibile')
       return
     }
@@ -272,6 +277,7 @@ export default function UtenteHomePage() {
       text.includes('otoscopio')
     ) {
       console.log('✅ Match: Otoscopio (4)')
+      setDestinationMessage('Otoscopio')
       speak('Ti porto all otoscopio')
       setTimeout(() => {
         console.log('🚀 Navigating to otoscopio')
@@ -282,6 +288,7 @@ export default function UtenteHomePage() {
 
     // Non riconosciuto
     console.log('❌ No match found for:', text)
+    setDestinationMessage('Comando non riconosciuto')
     speak('Non ho capito. Riprova dicendo: 1, 2, 3, o 4')
   }
 
@@ -312,8 +319,17 @@ export default function UtenteHomePage() {
       </button>
 
       {/* User Info - Compatto */}
-      <div className="absolute top-2 left-2 z-50 bg-white/20 backdrop-blur-lg rounded-xl px-4 py-2 shadow-lg">
-        <p className="text-white font-bold text-base">{utente.nome} {utente.cognome}</p>
+      <div className="absolute top-2 left-2 z-50 flex gap-2 items-center">
+        <div className="bg-white/20 backdrop-blur-lg rounded-xl px-4 py-2 shadow-lg">
+          <p className="text-white font-bold text-base">{utente.nome} {utente.cognome}</p>
+        </div>
+        <button
+          onClick={() => router.push('/utente/cambio-password')}
+          className="p-3 bg-white/20 backdrop-blur-lg rounded-full shadow-lg hover:bg-white/30 transition-all"
+          title="Cambia Password"
+        >
+          <Settings className="w-5 h-5 text-white" />
+        </button>
       </div>
 
       {/* Pulsante Attiva Microfono (solo se non ancora attivato) */}
@@ -427,14 +443,11 @@ export default function UtenteHomePage() {
         )}
       </button>
 
-      {/* Transcript Display - Più visibile */}
-      {transcript && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-emerald-600 backdrop-blur-lg rounded-2xl px-8 py-6 shadow-2xl max-w-2xl z-50 border-4 border-white">
-          <p className="text-white font-bold text-2xl text-center mb-2">
-            🎤 Hai detto:
-          </p>
-          <p className="text-yellow-300 font-black text-3xl text-center">
-            "{transcript}"
+      {/* Destination Display - Semplice e chiaro */}
+      {destinationMessage && (
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-emerald-600 backdrop-blur-lg rounded-2xl px-12 py-6 shadow-2xl z-50 border-4 border-white">
+          <p className="text-white font-black text-4xl text-center flex items-center gap-3">
+            → {destinationMessage}
           </p>
         </div>
       )}

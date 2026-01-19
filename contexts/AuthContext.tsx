@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
     setIsAuthenticated(false)
     localStorage.removeItem('linktop_user')
-    router.push('/login')
+    router.push('/')
   }
 
   return (

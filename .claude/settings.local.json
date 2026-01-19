@@ -6,7 +6,8 @@
       "Bash(curl:*)",
       "Bash(PGPASSWORD='GpsWatch2025' psql:*)",
       "Bash(PGPASSWORD=GpsWatch2025 psql:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(git add:*)"
     ]
   }
 }
