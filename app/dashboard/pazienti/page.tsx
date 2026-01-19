@@ -90,7 +90,7 @@ export default function PazientiPage() {
   const [saving, setSaving] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-  const [activeTab, setActiveTab] = useState<'lista' | 'spo2' | 'heartrate' | 'temperature' | 'ecg'>('lista')
+  const [activeTab, setActiveTab] = useState<'lista' | 'spo2' | 'heartrate' | 'temperature' | 'pressure' | 'ecg'>('lista')
   const [selectedPazienteId, setSelectedPazienteId] = useState<number | null>(null)
   const [healthData, setHealthData] = useState<any[]>([])
   const [healthStats, setHealthStats] = useState<any>(null)
@@ -139,7 +139,8 @@ export default function PazientiPage() {
       const typeMap: Record<string, string> = {
         spo2: 'spo2',
         heartrate: 'heart_rate',
-        temperature: 'temperature'
+        temperature: 'temperature',
+        pressure: 'blood_pressure'
       }
       const type = typeMap[activeTab]
       if (type) {
@@ -457,6 +458,17 @@ export default function PazientiPage() {
             >
               <Thermometer className="w-4 h-4" />
               Temperature
+            </button>
+            <button
+              onClick={() => setActiveTab('pressure')}
+              className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'pressure'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
+                  : 'text-gray-300 hover:bg-white/10'
+              }`}
+            >
+              <Activity className="w-4 h-4" />
+              Pressione
             </button>
             <button
               onClick={() => setActiveTab('ecg')}
@@ -1011,6 +1023,173 @@ export default function PazientiPage() {
                             </td>
                           </tr>
                         ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Tab Content - Pressione */}
+          {activeTab === 'pressure' && (
+            <div className="space-y-6">
+              {/* Messaggio Seleziona Paziente */}
+              {!selectedPazienteId ? (
+                <div className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 backdrop-blur-lg border border-purple-500/30 rounded-2xl p-12 text-center">
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-purple-500/20 rounded-full mb-6">
+                    <Activity className="w-10 h-10 text-purple-400" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-3">Seleziona un Paziente</h3>
+                  <p className="text-gray-300 max-w-md mx-auto">
+                    Utilizza il menu a tendina in alto per selezionare un paziente e visualizzare
+                    lo storico completo delle sue misurazioni di pressione sanguigna.
+                  </p>
+                </div>
+              ) : (
+                <>
+              {/* Info Paziente Selezionato */}
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold">
+                  {pazienti.find(p => p.id === selectedPazienteId)?.nome.charAt(0)}
+                  {pazienti.find(p => p.id === selectedPazienteId)?.cognome.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-xs text-emerald-300">Paziente selezionato</p>
+                  <p className="text-white font-semibold">
+                    {pazienti.find(p => p.id === selectedPazienteId)?.cognome} {pazienti.find(p => p.id === selectedPazienteId)?.nome}
+                  </p>
+                </div>
+              </div>
+
+              {/* Statistiche */}
+              {healthStats && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Statistiche Sistolica */}
+                  <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-6">
+                    <h4 className="text-purple-300 font-semibold mb-4">Pressione Sistolica (Massima)</h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-blue-300 text-xs mb-1">Minima</p>
+                        <p className="text-2xl font-bold text-white">{healthStats.systolic?.min}</p>
+                      </div>
+                      <div>
+                        <p className="text-emerald-300 text-xs mb-1">Media</p>
+                        <p className="text-2xl font-bold text-white">{healthStats.systolic?.avg}</p>
+                      </div>
+                      <div>
+                        <p className="text-orange-300 text-xs mb-1">Massima</p>
+                        <p className="text-2xl font-bold text-white">{healthStats.systolic?.max}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Statistiche Diastolica */}
+                  <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-6">
+                    <h4 className="text-indigo-300 font-semibold mb-4">Pressione Diastolica (Minima)</h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-blue-300 text-xs mb-1">Minima</p>
+                        <p className="text-2xl font-bold text-white">{healthStats.diastolic?.min}</p>
+                      </div>
+                      <div>
+                        <p className="text-emerald-300 text-xs mb-1">Media</p>
+                        <p className="text-2xl font-bold text-white">{healthStats.diastolic?.avg}</p>
+                      </div>
+                      <div>
+                        <p className="text-orange-300 text-xs mb-1">Massima</p>
+                        <p className="text-2xl font-bold text-white">{healthStats.diastolic?.max}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tabella Dati */}
+              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl overflow-hidden">
+                <div className="p-6 border-b border-white/10">
+                  <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                    <Activity className="w-6 h-6 text-purple-400" />
+                    Pressione Sanguigna
+                  </h2>
+                  <p className="text-gray-400 mt-1">{healthData.length} misurazioni totali</p>
+                </div>
+
+                {loadingHealth ? (
+                  <div className="p-12 text-center">
+                    <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin mx-auto mb-2" />
+                    <p className="text-gray-400">Caricamento dati...</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-white/5">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Paziente</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Sistolica</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Diastolica</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Data e Ora</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Stato</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/10">
+                        {healthData.map((record) => {
+                          // Calcola stato pressione
+                          const isNormal = record.systolic_bp >= 90 && record.systolic_bp <= 120 &&
+                                          record.diastolic_bp >= 60 && record.diastolic_bp <= 80
+                          const isElevated = record.systolic_bp > 120 && record.systolic_bp <= 139 ||
+                                            record.diastolic_bp > 80 && record.diastolic_bp <= 89
+                          const isHigh = record.systolic_bp >= 140 || record.diastolic_bp >= 90
+
+                          return (
+                            <tr key={record.id} className="hover:bg-white/5 transition-colors">
+                              <td className="px-6 py-4">
+                                <div className="text-white font-medium">{record.cognome} {record.nome}</div>
+                                <div className="text-gray-400 text-sm">{record.codice_fiscale}</div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className={`text-2xl font-bold ${
+                                  isNormal ? 'text-emerald-400' :
+                                  isElevated ? 'text-yellow-400' :
+                                  'text-red-400'
+                                }`}>
+                                  {record.systolic_bp}
+                                </span>
+                                <span className="text-gray-400 text-sm ml-1">mmHg</span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className={`text-2xl font-bold ${
+                                  isNormal ? 'text-emerald-400' :
+                                  isElevated ? 'text-yellow-400' :
+                                  'text-red-400'
+                                }`}>
+                                  {record.diastolic_bp}
+                                </span>
+                                <span className="text-gray-400 text-sm ml-1">mmHg</span>
+                              </td>
+                              <td className="px-6 py-4 text-gray-300">
+                                {new Date(record.recorded_at).toLocaleString('it-IT', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                  isNormal ? 'bg-emerald-500/20 text-emerald-300' :
+                                  isElevated ? 'bg-yellow-500/20 text-yellow-300' :
+                                  'bg-red-500/20 text-red-300'
+                                }`}>
+                                  {isNormal ? 'Normale' : isElevated ? 'Elevata' : 'Alta'}
+                                </span>
+                              </td>
+                            </tr>
+                          )
+                        })}
                       </tbody>
                     </table>
                   </div>
