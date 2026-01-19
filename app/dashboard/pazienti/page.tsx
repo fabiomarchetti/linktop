@@ -90,6 +90,11 @@ export default function PazientiPage() {
   const [saving, setSaving] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [activeTab, setActiveTab] = useState<'lista' | 'spo2' | 'heartrate' | 'temperature' | 'ecg'>('lista')
+  const [selectedPazienteId, setSelectedPazienteId] = useState<number | null>(null)
+  const [healthData, setHealthData] = useState<any[]>([])
+  const [healthStats, setHealthStats] = useState<any>(null)
+  const [loadingHealth, setLoadingHealth] = useState(false)
 
   const fetchPazienti = async () => {
     try {
@@ -108,6 +113,40 @@ export default function PazientiPage() {
   useEffect(() => {
     fetchPazienti()
   }, [])
+
+  const fetchHealthData = async (type: string, pazienteId: number | null) => {
+    setLoadingHealth(true)
+    try {
+      let url = `/api/health-data?type=${type}&limit=100`
+      if (pazienteId) {
+        url += `&paziente_id=${pazienteId}`
+      }
+      const response = await fetch(url)
+      const data = await response.json()
+      if (data.success) {
+        setHealthData(data.data)
+        setHealthStats(data.stats)
+      }
+    } catch (error) {
+      console.error('Errore caricamento dati salute:', error)
+    } finally {
+      setLoadingHealth(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab !== 'lista' && activeTab !== 'ecg') {
+      const typeMap: Record<string, string> = {
+        spo2: 'spo2',
+        heartrate: 'heart_rate',
+        temperature: 'temperature'
+      }
+      const type = typeMap[activeTab]
+      if (type) {
+        fetchHealthData(type, selectedPazienteId)
+      }
+    }
+  }, [activeTab, selectedPazienteId])
 
   const handleEdit = (paziente: Paziente) => {
     setEditingPaziente(paziente)
@@ -311,6 +350,22 @@ export default function PazientiPage() {
                   Gestione Pazienti
                 </h1>
                 <p className="text-gray-300 mt-1">{pazienti.length} pazienti registrati</p>
+
+                {/* Dropdown Selezione Paziente */}
+                <div className="mt-3">
+                  <select
+                    value={selectedPazienteId || ''}
+                    onChange={(e) => setSelectedPazienteId(e.target.value ? Number(e.target.value) : null)}
+                    className="w-80 px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+                  >
+                    <option value="" className="bg-slate-900">Seleziona un paziente...</option>
+                    {pazienti.map((p) => (
+                      <option key={p.id} value={p.id} className="bg-slate-900">
+                        {p.cognome} {p.nome} {p.codice_fiscale ? `- ${p.codice_fiscale}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -357,6 +412,68 @@ export default function PazientiPage() {
             </div>
           )}
 
+          {/* Tab Navigation */}
+          <div className="mb-6 flex gap-2 bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-2">
+            <button
+              onClick={() => setActiveTab('lista')}
+              className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'lista'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
+                  : 'text-gray-300 hover:bg-white/10'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              Lista Pazienti
+            </button>
+            <button
+              onClick={() => setActiveTab('spo2')}
+              className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'spo2'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
+                  : 'text-gray-300 hover:bg-white/10'
+              }`}
+            >
+              <Droplet className="w-4 h-4" />
+              Saturazione O2
+            </button>
+            <button
+              onClick={() => setActiveTab('heartrate')}
+              className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'heartrate'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
+                  : 'text-gray-300 hover:bg-white/10'
+              }`}
+            >
+              <Heart className="w-4 h-4" />
+              Battito Cardiaco
+            </button>
+            <button
+              onClick={() => setActiveTab('temperature')}
+              className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'temperature'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
+                  : 'text-gray-300 hover:bg-white/10'
+              }`}
+            >
+              <Thermometer className="w-4 h-4" />
+              Temperature
+            </button>
+            <button
+              onClick={() => setActiveTab('ecg')}
+              className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'ecg'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
+                  : 'text-gray-300 hover:bg-white/10'
+              }`}
+            >
+              <Activity className="w-4 h-4" />
+              ECG
+            </button>
+          </div>
+
+          {/* Tab Content - Lista Pazienti */}
+          {activeTab === 'lista' && (
+          <>
           {/* Patients Grid */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
@@ -371,7 +488,14 @@ export default function PazientiPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredPazienti.map((paziente) => (
-                <div key={paziente.id} className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl overflow-hidden shadow-2xl transition-all hover:bg-white/10">
+                <div
+                  key={paziente.id}
+                  className={`backdrop-blur-lg border rounded-2xl overflow-hidden shadow-2xl transition-all ${
+                    selectedPazienteId === paziente.id
+                      ? 'bg-gradient-to-br from-emerald-500/40 to-teal-500/40 border-emerald-400 ring-4 ring-emerald-400/60 shadow-emerald-500/50 scale-105'
+                      : 'bg-white/5 border-white/10 hover:bg-white/10'
+                  }`}
+                >
                   {/* Card Header */}
                   <div className="p-6 border-b border-white/10">
                     <div className="flex items-start justify-between mb-4">
@@ -526,6 +650,447 @@ export default function PazientiPage() {
                   )}
                 </div>
               ))}
+            </div>
+          )}
+          </>
+          )}
+
+          {/* Tab Content - SpO2 */}
+          {activeTab === 'spo2' && (
+            <div className="space-y-6">
+              {/* Messaggio Seleziona Paziente */}
+              {!selectedPazienteId ? (
+                <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 backdrop-blur-lg border border-cyan-500/30 rounded-2xl p-12 text-center">
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-cyan-500/20 rounded-full mb-6">
+                    <Droplet className="w-10 h-10 text-cyan-400" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-3">Seleziona un Paziente</h3>
+                  <p className="text-gray-300 max-w-md mx-auto">
+                    Utilizza il menu a tendina in alto per selezionare un paziente e visualizzare
+                    lo storico completo delle sue misurazioni di saturazione ossigeno.
+                  </p>
+                </div>
+              ) : (
+                <>
+              {/* Info Paziente Selezionato */}
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold">
+                  {pazienti.find(p => p.id === selectedPazienteId)?.nome.charAt(0)}
+                  {pazienti.find(p => p.id === selectedPazienteId)?.cognome.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-xs text-emerald-300">Paziente selezionato</p>
+                  <p className="text-white font-semibold">
+                    {pazienti.find(p => p.id === selectedPazienteId)?.cognome} {pazienti.find(p => p.id === selectedPazienteId)?.nome}
+                  </p>
+                </div>
+              </div>
+
+              {/* Statistiche */}
+              {healthStats && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 rounded-xl p-6">
+                    <p className="text-blue-300 text-sm mb-1">Minimo</p>
+                    <p className="text-4xl font-bold text-white">{healthStats.min}%</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 rounded-xl p-6">
+                    <p className="text-emerald-300 text-sm mb-1">Media</p>
+                    <p className="text-4xl font-bold text-white">{healthStats.avg}%</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-xl p-6">
+                    <p className="text-orange-300 text-sm mb-1">Massimo</p>
+                    <p className="text-4xl font-bold text-white">{healthStats.max}%</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Tabella Dati */}
+              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl overflow-hidden">
+                <div className="p-6 border-b border-white/10">
+                  <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                    <Droplet className="w-6 h-6 text-blue-400" />
+                    Saturazione Ossigeno (SpO2)
+                  </h2>
+                  <p className="text-gray-400 mt-1">{healthData.length} misurazioni totali</p>
+                </div>
+
+                {loadingHealth ? (
+                  <div className="p-12 text-center">
+                    <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin mx-auto mb-2" />
+                    <p className="text-gray-400">Caricamento dati...</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-white/5">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Paziente</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">SpO2</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Data e Ora</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Stato</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/10">
+                        {healthData.map((record) => (
+                          <tr key={record.id} className="hover:bg-white/5 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="text-white font-medium">{record.cognome} {record.nome}</div>
+                              <div className="text-gray-400 text-sm">{record.codice_fiscale}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`text-2xl font-bold ${
+                                record.spo2 >= 95 ? 'text-emerald-400' :
+                                record.spo2 >= 90 ? 'text-yellow-400' :
+                                'text-red-400'
+                              }`}>
+                                {record.spo2}%
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-gray-300">
+                              {new Date(record.recorded_at).toLocaleString('it-IT', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                record.spo2 >= 95 ? 'bg-emerald-500/20 text-emerald-300' :
+                                record.spo2 >= 90 ? 'bg-yellow-500/20 text-yellow-300' :
+                                'bg-red-500/20 text-red-300'
+                              }`}>
+                                {record.spo2 >= 95 ? 'Normale' : record.spo2 >= 90 ? 'Attenzione' : 'Critico'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Tab Content - Heart Rate */}
+          {activeTab === 'heartrate' && (
+            <div className="space-y-6">
+              {/* Messaggio Seleziona Paziente */}
+              {!selectedPazienteId ? (
+                <div className="bg-gradient-to-br from-red-500/10 to-pink-500/10 backdrop-blur-lg border border-red-500/30 rounded-2xl p-12 text-center">
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-red-500/20 rounded-full mb-6">
+                    <Heart className="w-10 h-10 text-red-400" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-3">Seleziona un Paziente</h3>
+                  <p className="text-gray-300 max-w-md mx-auto">
+                    Utilizza il menu a tendina in alto per selezionare un paziente e visualizzare
+                    lo storico completo delle sue misurazioni di battito cardiaco.
+                  </p>
+                </div>
+              ) : (
+                <>
+              {/* Info Paziente Selezionato */}
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold">
+                  {pazienti.find(p => p.id === selectedPazienteId)?.nome.charAt(0)}
+                  {pazienti.find(p => p.id === selectedPazienteId)?.cognome.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-xs text-emerald-300">Paziente selezionato</p>
+                  <p className="text-white font-semibold">
+                    {pazienti.find(p => p.id === selectedPazienteId)?.cognome} {pazienti.find(p => p.id === selectedPazienteId)?.nome}
+                  </p>
+                </div>
+              </div>
+
+              {/* Statistiche */}
+              {healthStats && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 rounded-xl p-6">
+                    <p className="text-blue-300 text-sm mb-1">Minimo</p>
+                    <p className="text-4xl font-bold text-white">{healthStats.min} <span className="text-lg">bpm</span></p>
+                  </div>
+                  <div className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 rounded-xl p-6">
+                    <p className="text-emerald-300 text-sm mb-1">Media</p>
+                    <p className="text-4xl font-bold text-white">{healthStats.avg} <span className="text-lg">bpm</span></p>
+                  </div>
+                  <div className="bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-xl p-6">
+                    <p className="text-orange-300 text-sm mb-1">Massimo</p>
+                    <p className="text-4xl font-bold text-white">{healthStats.max} <span className="text-lg">bpm</span></p>
+                  </div>
+                </div>
+              )}
+
+              {/* Tabella Dati */}
+              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl overflow-hidden">
+                <div className="p-6 border-b border-white/10">
+                  <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                    <Heart className="w-6 h-6 text-red-400" />
+                    Battito Cardiaco
+                  </h2>
+                  <p className="text-gray-400 mt-1">{healthData.length} misurazioni totali</p>
+                </div>
+
+                {loadingHealth ? (
+                  <div className="p-12 text-center">
+                    <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin mx-auto mb-2" />
+                    <p className="text-gray-400">Caricamento dati...</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-white/5">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Paziente</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">BPM</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Data e Ora</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Stato</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/10">
+                        {healthData.map((record) => (
+                          <tr key={record.id} className="hover:bg-white/5 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="text-white font-medium">{record.cognome} {record.nome}</div>
+                              <div className="text-gray-400 text-sm">{record.codice_fiscale}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`text-2xl font-bold ${
+                                record.heart_rate >= 60 && record.heart_rate <= 100 ? 'text-emerald-400' :
+                                record.heart_rate >= 50 && record.heart_rate <= 110 ? 'text-yellow-400' :
+                                'text-red-400'
+                              }`}>
+                                {record.heart_rate} <span className="text-sm">bpm</span>
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-gray-300">
+                              {new Date(record.recorded_at).toLocaleString('it-IT', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                record.heart_rate >= 60 && record.heart_rate <= 100 ? 'bg-emerald-500/20 text-emerald-300' :
+                                record.heart_rate >= 50 && record.heart_rate <= 110 ? 'bg-yellow-500/20 text-yellow-300' :
+                                'bg-red-500/20 text-red-300'
+                              }`}>
+                                {record.heart_rate >= 60 && record.heart_rate <= 100 ? 'Normale' :
+                                 record.heart_rate >= 50 && record.heart_rate <= 110 ? 'Attenzione' : 'Critico'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Tab Content - Temperature */}
+          {activeTab === 'temperature' && (
+            <div className="space-y-6">
+              {/* Messaggio Seleziona Paziente */}
+              {!selectedPazienteId ? (
+                <div className="bg-gradient-to-br from-orange-500/10 to-yellow-500/10 backdrop-blur-lg border border-orange-500/30 rounded-2xl p-12 text-center">
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-orange-500/20 rounded-full mb-6">
+                    <Thermometer className="w-10 h-10 text-orange-400" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-3">Seleziona un Paziente</h3>
+                  <p className="text-gray-300 max-w-md mx-auto">
+                    Utilizza il menu a tendina in alto per selezionare un paziente e visualizzare
+                    lo storico completo delle sue misurazioni di temperatura.
+                  </p>
+                </div>
+              ) : (
+                <>
+              {/* Info Paziente Selezionato */}
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold">
+                  {pazienti.find(p => p.id === selectedPazienteId)?.nome.charAt(0)}
+                  {pazienti.find(p => p.id === selectedPazienteId)?.cognome.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-xs text-emerald-300">Paziente selezionato</p>
+                  <p className="text-white font-semibold">
+                    {pazienti.find(p => p.id === selectedPazienteId)?.cognome} {pazienti.find(p => p.id === selectedPazienteId)?.nome}
+                  </p>
+                </div>
+              </div>
+
+              {/* Statistiche */}
+              {healthStats && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 rounded-xl p-6">
+                    <p className="text-blue-300 text-sm mb-1">Minima</p>
+                    <p className="text-4xl font-bold text-white">{healthStats.min}°C</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 rounded-xl p-6">
+                    <p className="text-emerald-300 text-sm mb-1">Media</p>
+                    <p className="text-4xl font-bold text-white">{healthStats.avg}°C</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-orange-500/20 to-red-500/20 border border-orange-500/30 rounded-xl p-6">
+                    <p className="text-orange-300 text-sm mb-1">Massima</p>
+                    <p className="text-4xl font-bold text-white">{healthStats.max}°C</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Tabella Dati */}
+              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl overflow-hidden">
+                <div className="p-6 border-b border-white/10">
+                  <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                    <Thermometer className="w-6 h-6 text-orange-400" />
+                    Temperature
+                  </h2>
+                  <p className="text-gray-400 mt-1">{healthData.length} misurazioni totali</p>
+                </div>
+
+                {loadingHealth ? (
+                  <div className="p-12 text-center">
+                    <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin mx-auto mb-2" />
+                    <p className="text-gray-400">Caricamento dati...</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-white/5">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Paziente</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Temperatura</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Data e Ora</th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase">Stato</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/10">
+                        {healthData.map((record) => (
+                          <tr key={record.id} className="hover:bg-white/5 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="text-white font-medium">{record.cognome} {record.nome}</div>
+                              <div className="text-gray-400 text-sm">{record.codice_fiscale}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`text-2xl font-bold ${
+                                record.temperature >= 36.1 && record.temperature <= 37.2 ? 'text-emerald-400' :
+                                record.temperature >= 35.5 && record.temperature <= 37.5 ? 'text-yellow-400' :
+                                'text-red-400'
+                              }`}>
+                                {parseFloat(record.temperature).toFixed(1)}°C
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-gray-300">
+                              {new Date(record.recorded_at).toLocaleString('it-IT', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                record.temperature >= 36.1 && record.temperature <= 37.2 ? 'bg-emerald-500/20 text-emerald-300' :
+                                record.temperature >= 35.5 && record.temperature <= 37.5 ? 'bg-yellow-500/20 text-yellow-300' :
+                                'bg-red-500/20 text-red-300'
+                              }`}>
+                                {record.temperature >= 36.1 && record.temperature <= 37.2 ? 'Normale' :
+                                 record.temperature >= 35.5 && record.temperature <= 37.5 ? 'Attenzione' :
+                                 record.temperature < 36 ? 'Ipotermia' : 'Febbre'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Tab Content - ECG */}
+          {activeTab === 'ecg' && (
+            <div className="space-y-6">
+              {/* Coming Soon Card */}
+              <div className="bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-indigo-500/10 backdrop-blur-lg border border-purple-500/30 rounded-2xl overflow-hidden">
+                <div className="p-8 text-center">
+                  <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full mb-6">
+                    <Activity className="w-12 h-12 text-purple-400" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-white mb-3">
+                    Monitoraggio ECG
+                  </h2>
+                  <p className="text-xl text-purple-300 font-semibold mb-6">
+                    Funzionalità in Arrivo
+                  </p>
+                  <p className="text-gray-300 max-w-2xl mx-auto mb-8">
+                    Il sistema di monitoraggio elettrocardiografico sarà presto disponibile.
+                    Questa funzionalità permetterà di visualizzare e analizzare i tracciati ECG
+                    dei pazienti in tempo reale e accedere allo storico completo delle registrazioni.
+                  </p>
+
+                  {/* Features Preview */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto mt-8">
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+                      <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <Activity className="w-6 h-6 text-emerald-400" />
+                      </div>
+                      <h3 className="text-white font-semibold mb-2">Tracciati in Tempo Reale</h3>
+                      <p className="text-gray-400 text-sm">
+                        Visualizzazione continua dell'attività cardiaca
+                      </p>
+                    </div>
+
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+                      <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <Eye className="w-6 h-6 text-blue-400" />
+                      </div>
+                      <h3 className="text-white font-semibold mb-2">Analisi Automatica</h3>
+                      <p className="text-gray-400 text-sm">
+                        Rilevamento anomalie e alert automatici
+                      </p>
+                    </div>
+
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+                      <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <Stethoscope className="w-6 h-6 text-orange-400" />
+                      </div>
+                      <h3 className="text-white font-semibold mb-2">Storico Completo</h3>
+                      <p className="text-gray-400 text-sm">
+                        Archivio di tutte le registrazioni ECG
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Info Box */}
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-6 flex items-start gap-4">
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <AlertTriangle className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold mb-1">Sistema in Sviluppo</h3>
+                  <p className="text-gray-300 text-sm">
+                    Il modulo ECG richiede dispositivi hardware specifici per la raccolta dei dati.
+                    Una volta configurati i dispositivi ECG, questa sezione mostrerà automaticamente
+                    i tracciati e le statistiche cardiache di tutti i pazienti monitorati.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>
