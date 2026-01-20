@@ -47,17 +47,20 @@ const menuItems: MenuItem[] = [
     icon: <Heart className="w-5 h-5" />,
     label: "Health Monitor",
     href: "/dashboard/health-monitor",
+    allowedRoles: ["sviluppatore", "animatore_digitale", "controllo_parentale", "utente_base"], // Escluso assistente_control_room
   },
   {
     icon: <Stethoscope className="w-5 h-5" />,
     label: "Stetoscopio",
     href: "/dashboard/stetoscopio",
+    allowedRoles: ["sviluppatore", "animatore_digitale", "controllo_parentale", "utente_base"], // Escluso assistente_control_room
   },
   {
     icon: <Eye className="w-5 h-5" />,
     label: "Otoscopio",
     href: "/dashboard/otoscopio",
     dividerAfter: true,
+    allowedRoles: ["sviluppatore", "animatore_digitale", "controllo_parentale", "utente_base"], // Escluso assistente_control_room
   },
   {
     icon: <Users className="w-5 h-5" />,
@@ -74,11 +77,13 @@ const menuItems: MenuItem[] = [
     icon: <User className="w-5 h-5" />,
     label: "Pagina Utente",
     href: "/utente",
+    allowedRoles: ["sviluppatore", "animatore_digitale", "controllo_parentale", "utente_base"], // Escluso assistente_control_room
   },
   {
     icon: <FileText className="w-5 h-5" />,
     label: "Documenti",
     href: "/dashboard/documenti",
+    allowedRoles: ["sviluppatore", "animatore_digitale", "controllo_parentale", "utente_base"], // Escluso assistente_control_room
   },
   {
     icon: <BarChart3 className="w-5 h-5" />,
@@ -89,6 +94,7 @@ const menuItems: MenuItem[] = [
     icon: <Settings className="w-5 h-5" />,
     label: "Impostazioni",
     href: "/dashboard/impostazioni",
+    allowedRoles: ["sviluppatore", "animatore_digitale", "controllo_parentale", "utente_base"], // Escluso assistente_control_room
   },
 ];
 

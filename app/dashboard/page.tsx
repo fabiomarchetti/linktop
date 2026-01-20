@@ -112,30 +112,32 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <QuickActionCard
-            icon={<Heart className="w-6 h-6" />}
-            title="Health Monitor"
-            description="Misura parametri vitali"
-            href="/dashboard/health-monitor"
-            color="from-red-500 to-pink-600"
-          />
-          <QuickActionCard
-            icon={<Stethoscope className="w-6 h-6" />}
-            title="Stetoscopio Digitale"
-            description="Auscultazione cardiaca"
-            href="/dashboard/stetoscopio"
-            color="from-blue-500 to-cyan-600"
-          />
-          <QuickActionCard
-            icon={<Eye className="w-6 h-6" />}
-            title="Otoscopio Digitale"
-            description="Ispezione orecchie"
-            href="/dashboard/otoscopio"
-            color="from-purple-500 to-indigo-600"
-          />
-        </div>
+        {/* Quick Actions - Nascosto per assistente_control_room */}
+        {user.ruolo !== 'assistente_control_room' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <QuickActionCard
+              icon={<Heart className="w-6 h-6" />}
+              title="Health Monitor"
+              description="Misura parametri vitali"
+              href="/dashboard/health-monitor"
+              color="from-red-500 to-pink-600"
+            />
+            <QuickActionCard
+              icon={<Stethoscope className="w-6 h-6" />}
+              title="Stetoscopio Digitale"
+              description="Auscultazione cardiaca"
+              href="/dashboard/stetoscopio"
+              color="from-blue-500 to-cyan-600"
+            />
+            <QuickActionCard
+              icon={<Eye className="w-6 h-6" />}
+              title="Otoscopio Digitale"
+              description="Ispezione orecchie"
+              href="/dashboard/otoscopio"
+              color="from-purple-500 to-indigo-600"
+            />
+          </div>
+        )}
 
         {/* Info Card */}
         <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10">
