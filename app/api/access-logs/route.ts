@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { query } from '@/lib/db'
+import pool from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     sql += ` OFFSET $${paramIndex}`
     params.push(offset)
 
-    const result = await query(sql, params)
+    const result = await pool.query(sql, params)
 
     // Conta totale per paginazione
     let countSql = 'SELECT COUNT(*) FROM linktop_access_logs WHERE 1=1'
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       countParams.push(actionType)
     }
 
-    const countResult = await query(countSql, countParams)
+    const countResult = await pool.query(countSql, countParams)
     const total = parseInt(countResult.rows[0].count)
 
     return NextResponse.json({
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
       RETURNING *
     `
 
-    const result = await query(sql, [
+    const result = await pool.query(sql, [
       user_id,
       username,
       nome,
