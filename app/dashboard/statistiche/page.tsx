@@ -384,6 +384,7 @@ export default function StatistichePage() {
                               border: '1px solid #334155',
                               borderRadius: '8px'
                             }}
+                            labelStyle={{ color: '#fff' }}
                           />
                           <Legend />
                           <Line
@@ -432,6 +433,8 @@ export default function StatistichePage() {
                               border: '1px solid #334155',
                               borderRadius: '8px'
                             }}
+                            labelStyle={{ color: '#fff' }}
+                            itemStyle={{ color: '#fbbf24' }}
                           />
                           <Area
                             type="monotone"
@@ -473,6 +476,8 @@ export default function StatistichePage() {
                               border: '1px solid #334155',
                               borderRadius: '8px'
                             }}
+                            labelStyle={{ color: '#fff' }}
+                            itemStyle={{ color: '#fbbf24' }}
                           />
                           <Legend />
                           <Bar dataKey="min" fill="#10b981" name="Minimo" />
