@@ -535,22 +535,43 @@ export default function UtenteHeartMonitorPage() {
         const payload = packet.slice(6, 6 + payloadLen)
 
         if (payload.length >= 4) {
-          const bt = payload[0] + payload[1] / 10
-          const et = payload[2] + payload[3] / 10
-          let finalTemp = bt > 34 ? bt : (bt + et) / 2
+          // Lettura corretta a 16-bit little-endian + conversione Kelvin → Celsius
+          const tempBT_raw = payload[0] | (payload[1] << 8)  // Body Temperature
+          const tempET_raw = payload[2] | (payload[3] << 8)  // Environment Temperature
 
-          // Apply calibration
-          finalTemp += temperatureOffsetRef.current
+          // Formula conversione: Kelvin → Celsius (da BtTask.java)
+          const tempBT = (tempBT_raw * 0.02) - 273.15
+          const tempET = (tempET_raw * 0.02) - 273.15
 
-          console.log(`🌡️ Temperatura: ${finalTemp.toFixed(1)}°C`)
+          console.log(`🌡️ Temp raw: BT=${tempBT_raw} (${tempBT.toFixed(1)}°C), ET=${tempET_raw} (${tempET.toFixed(1)}°C)`)
 
-          setMeasurements(prev => ({
-            ...prev,
-            temperature: parseFloat(finalTemp.toFixed(1))
-          }))
+          // Usa principalmente la temperatura corporea (BT)
+          let finalTemp = tempBT
 
-          updateMeasuringState(false)
-          playBeep(1200, 300)
+          // Se BT sembra troppo bassa, media con ET
+          if (tempBT < 30 && tempET > 30) {
+            finalTemp = (tempBT + tempET) / 2
+          }
+
+          // CALIBRAZIONE: Applica offset personalizzabile dall'utente (salvato nella pagina staff)
+          const tempOffset = temperatureOffsetRef.current
+          const rawTemp = finalTemp
+          finalTemp = finalTemp + tempOffset
+
+          console.log(`🌡️ Temperatura: raw=${rawTemp.toFixed(1)}°C + offset(${tempOffset > 0 ? '+' : ''}${tempOffset.toFixed(1)}°C) = ${finalTemp.toFixed(1)}°C`)
+
+          if (finalTemp > 30 && finalTemp < 45) {
+            setMeasurements(prev => ({
+              ...prev,
+              temperature: parseFloat(finalTemp.toFixed(1))
+            }))
+
+            updateMeasuringState(false)
+            playBeep(1200, 300)
+          } else {
+            console.warn(`⚠️ Temperatura fuori range: ${finalTemp.toFixed(1)}°C`)
+            updateMeasuringState(false)
+          }
         }
       }
     }
