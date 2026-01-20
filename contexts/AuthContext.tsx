@@ -57,13 +57,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false)
   }, [])
 
+  // Helper: Registra un log di accesso
+  const logAccess = async (userData: User, actionType: 'login' | 'logout' | 'page_visit', pageUrl?: string) => {
+    try {
+      await fetch('/api/access-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userData.id,
+          username: userData.username,
+          nome: userData.nome,
+          cognome: userData.cognome,
+          ruolo: userData.ruolo,
+          action_type: actionType,
+          page_url: pageUrl || null,
+          ip_address: null, // Potrebbe essere ottenuto dal server
+          user_agent: navigator.userAgent
+        })
+      })
+    } catch (error) {
+      console.error('Errore logging accesso:', error)
+    }
+  }
+
   const login = (userData: User) => {
     setUser(userData)
     setIsAuthenticated(true)
     localStorage.setItem('linktop_user', JSON.stringify(userData))
+
+    // Log del login
+    logAccess(userData, 'login')
   }
 
   const logout = () => {
+    // Log del logout prima di rimuovere l'utente
+    if (user) {
+      logAccess(user, 'logout')
+    }
+
     setUser(null)
     setIsAuthenticated(false)
     localStorage.removeItem('linktop_user')

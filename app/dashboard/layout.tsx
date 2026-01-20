@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { usePageTracking } from '@/hooks/usePageTracking'
 
 export default function DashboardLayout({
   children,
@@ -11,6 +12,9 @@ export default function DashboardLayout({
   const router = useRouter()
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [isChecking, setIsChecking] = useState(true)
+
+  // Tracking automatico delle pagine visitate
+  usePageTracking()
 
   useEffect(() => {
     // Verifica se l'utente staff è autenticato

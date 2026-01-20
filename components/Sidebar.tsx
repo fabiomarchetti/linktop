@@ -18,6 +18,7 @@ import {
   UserPlus,
   User,
   FileText,
+  ScrollText,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -91,10 +92,10 @@ const menuItems: MenuItem[] = [
     href: "/dashboard/statistiche",
   },
   {
-    icon: <Settings className="w-5 h-5" />,
-    label: "Impostazioni",
-    href: "/dashboard/impostazioni",
-    allowedRoles: ["sviluppatore", "animatore_digitale", "controllo_parentale", "utente_base"], // Escluso assistente_control_room
+    icon: <ScrollText className="w-5 h-5" />,
+    label: "Logs accessi",
+    href: "/dashboard/logs",
+    allowedRoles: ["sviluppatore"], // Solo sviluppatore può vedere i log
   },
 ];
 
