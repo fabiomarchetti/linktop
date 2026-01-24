@@ -1,5 +1,120 @@
 import { NextRequest, NextResponse } from 'next/server'
 import pool from '@/lib/db'
+import { evaluateMeasurement } from '@/lib/alerts'
+
+/**
+ * POST /api/health-data
+ * Salva una nuova misurazione e valuta eventuali alert
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+
+    const {
+      paziente_id,
+      dispositivo_id,
+      measurement_type,
+      heart_rate,
+      systolic_bp,
+      diastolic_bp,
+      spo2,
+      temperature,
+      temperature_mode,
+      recorded_by,
+      location,
+      notes,
+      raw_data,
+    } = body
+
+    // Validazione base
+    if (!paziente_id) {
+      return NextResponse.json(
+        { error: 'paziente_id richiesto' },
+        { status: 400 }
+      )
+    }
+
+    // Inserisce la misurazione
+    const insertResult = await pool.query(`
+      INSERT INTO linktop_health_data (
+        paziente_id,
+        dispositivo_id,
+        measurement_type,
+        heart_rate,
+        systolic_bp,
+        diastolic_bp,
+        spo2,
+        temperature,
+        temperature_mode,
+        recorded_by,
+        location,
+        notes,
+        raw_data,
+        recorded_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+      RETURNING id, recorded_at
+    `, [
+      paziente_id,
+      dispositivo_id || null,
+      measurement_type || 'health_monitor',
+      heart_rate || null,
+      systolic_bp || null,
+      diastolic_bp || null,
+      spo2 || null,
+      temperature || null,
+      temperature_mode || null,
+      recorded_by || null,
+      location || null,
+      notes || null,
+      raw_data ? JSON.stringify(raw_data) : null,
+    ])
+
+    const healthDataId = insertResult.rows[0].id
+    const recordedAt = insertResult.rows[0].recorded_at
+
+    // Valuta la misurazione per eventuali alert
+    const evaluationResult = await evaluateMeasurement({
+      paziente_id,
+      heart_rate,
+      spo2,
+      systolic_bp,
+      diastolic_bp,
+      temperature,
+      health_data_id: healthDataId,
+    })
+
+    // Log se ci sono alert
+    if (evaluationResult.has_alerts) {
+      console.log(`[Health Data] ${evaluationResult.alerts.length} alert generati per paziente ${paziente_id}`)
+    }
+
+    return NextResponse.json({
+      success: true,
+      id: healthDataId,
+      recorded_at: recordedAt,
+      alerts: evaluationResult.has_alerts ? {
+        count: evaluationResult.alerts.length,
+        items: evaluationResult.alerts.map(a => ({
+          id: a.id,
+          type: a.alert_type,
+          severity: a.severity,
+          message: a.message,
+        })),
+      } : null,
+    })
+
+  } catch (error: any) {
+    console.error('Errore POST /api/health-data:', error)
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Errore nel salvataggio della misurazione',
+        details: error.message,
+      },
+      { status: 500 }
+    )
+  }
+}
 
 /**
  * GET /api/health-data
