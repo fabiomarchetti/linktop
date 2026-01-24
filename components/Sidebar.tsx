@@ -99,6 +99,12 @@ const menuItems: MenuItem[] = [
     href: "/dashboard/statistiche",
   },
   {
+    icon: <Settings className="w-5 h-5" />,
+    label: "Soglie Alert",
+    href: "/dashboard/soglie",
+    allowedRoles: ["sviluppatore", "animatore_digitale"],
+  },
+  {
     icon: <ScrollText className="w-5 h-5" />,
     label: "Logs accessi",
     href: "/dashboard/logs",
