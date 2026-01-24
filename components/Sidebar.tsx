@@ -19,6 +19,7 @@ import {
   User,
   FileText,
   ScrollText,
+  Bell,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -35,7 +36,13 @@ const menuItems: MenuItem[] = [
     icon: <Home className="w-5 h-5" />,
     label: "Dashboard",
     href: "/dashboard",
+  },
+  {
+    icon: <Bell className="w-5 h-5" />,
+    label: "Alert",
+    href: "/dashboard/alerts",
     dividerAfter: true,
+    allowedRoles: ["sviluppatore", "animatore_digitale", "assistente_control_room"],
   },
   {
     icon: <UserPlus className="w-5 h-5" />,
