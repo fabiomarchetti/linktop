@@ -76,6 +76,12 @@ const menuItems: MenuItem[] = [
     href: "/dashboard/pazienti",
   },
   {
+    icon: <Settings className="w-5 h-5" />,
+    label: "Soglie Alert",
+    href: "/dashboard/soglie",
+    allowedRoles: ["sviluppatore", "animatore_digitale"],
+  },
+  {
     icon: <Activity className="w-5 h-5" />,
     label: "Pazienti-Dispositivi",
     href: "/dashboard/pazienti-dispositivi",
@@ -97,12 +103,6 @@ const menuItems: MenuItem[] = [
     icon: <BarChart3 className="w-5 h-5" />,
     label: "Statistiche",
     href: "/dashboard/statistiche",
-  },
-  {
-    icon: <Settings className="w-5 h-5" />,
-    label: "Soglie Alert",
-    href: "/dashboard/soglie",
-    allowedRoles: ["sviluppatore", "animatore_digitale"],
   },
   {
     icon: <ScrollText className="w-5 h-5" />,
