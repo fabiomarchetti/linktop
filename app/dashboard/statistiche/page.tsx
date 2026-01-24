@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft, TrendingUp, Calendar, Users, Droplet, Heart,
@@ -35,12 +36,24 @@ type DateRange = '7d' | '30d' | '3m' | '6m' | 'all'
 type TabType = 'spo2' | 'heartrate' | 'temperature' | 'pressure'
 
 export default function StatistichePage() {
+  const searchParams = useSearchParams()
   const [pazienti, setPazienti] = useState<Paziente[]>([])
   const [selectedPazienteId, setSelectedPazienteId] = useState<number | null>(null)
   const [dateRange, setDateRange] = useState<DateRange>('30d')
   const [activeTab, setActiveTab] = useState<TabType>('heartrate')
   const [healthData, setHealthData] = useState<HealthRecord[]>([])
   const [loading, setLoading] = useState(false)
+
+  // Leggi paziente_id dall'URL se presente
+  useEffect(() => {
+    const pazienteIdParam = searchParams.get('paziente_id')
+    if (pazienteIdParam) {
+      const id = parseInt(pazienteIdParam)
+      if (!isNaN(id)) {
+        setSelectedPazienteId(id)
+      }
+    }
+  }, [searchParams])
 
   // Fetch pazienti al caricamento
   useEffect(() => {

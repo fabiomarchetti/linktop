@@ -193,8 +193,8 @@ export function generateAlertEmailHtml(data: AlertEmailData): string {
               <table role="presentation" style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td align="center">
-                    <a href="${dashboardUrl}/alerts" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #0D9488 0%, #14B8A6 100%); color: #FFFFFF; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 8px;">
-                      Vai alla Dashboard
+                    <a href="${dashboardUrl}/statistiche?paziente_id=${data.patientId}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #0D9488 0%, #14B8A6 100%); color: #FFFFFF; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 8px;">
+                      Vedi Statistiche Paziente
                     </a>
                   </td>
                 </tr>
@@ -224,7 +224,7 @@ export function generateAlertEmailHtml(data: AlertEmailData): string {
                           </a>
                         </td>
                         <td>
-                          <a href="${dashboardUrl}/health-monitor?paziente=${data.patientId}" style="color: #0D9488; text-decoration: none; font-size: 14px;">
+                          <a href="${dashboardUrl}/statistiche?paziente_id=${data.patientId}" style="color: #0D9488; text-decoration: none; font-size: 14px;">
                             Storico Misurazioni
                           </a>
                         </td>
