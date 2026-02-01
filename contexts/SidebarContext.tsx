@@ -15,8 +15,8 @@ interface SidebarContextType {
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined)
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState(true)
+  const [isOpen, setIsOpen] = useState(false) // Sempre chiusa di default
+  const [isMobile, setIsMobile] = useState(false) // Default false per evitare flash
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Gestisce resize e imposta stato iniziale
@@ -24,7 +24,6 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
     const checkMobile = () => {
       const mobile = window.innerWidth < 1024
       setIsMobile(mobile)
-      // Sidebar chiusa di default sia su mobile che desktop
     }
 
     checkMobile()

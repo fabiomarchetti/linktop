@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Heart, Activity, RefreshCw, AlertTriangle, CheckCircle, Square } from 'lucide-react'
+import { ArrowLeft, Heart, Activity, RefreshCw, AlertTriangle, CheckCircle, Square, Maximize2, Minimize2 } from 'lucide-react'
 import Sidebar from '@/components/Sidebar'
+import { useSidebar } from '@/contexts/SidebarContext'
 
 // ============================================================================
 // CODICE BLE COMPLETO DALLA PAGINA /TEST - FUNZIONANTE E CALIBRATO
@@ -34,6 +35,7 @@ interface MeasurementData {
 }
 
 export default function HealthMonitorPage() {
+  const { isOpen: sidebarOpen, isMobile, isFullscreen, toggleFullscreen } = useSidebar()
   const [status, setStatus] = useState<string>('Pronto per la connessione')
   const [device, setDevice] = useState<DeviceData>({
     deviceId: 'Non connesso',
@@ -1605,10 +1607,25 @@ export default function HealthMonitorPage() {
 
       <Sidebar />
 
-      <main className="pt-16 lg:pt-0 lg:ml-64 transition-all duration-300">
+      {/* Fullscreen Button */}
+      <button
+        onClick={toggleFullscreen}
+        className="fixed top-2 right-2 z-20 p-1.5 sm:p-2 bg-white/10 hover:bg-white/20 backdrop-blur-lg rounded-full transition-all border border-white/20"
+        title={isFullscreen ? 'Esci da schermo intero' : 'Schermo intero'}
+      >
+        {isFullscreen ? (
+          <Minimize2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+        ) : (
+          <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+        )}
+      </button>
+
+      <main className={`pt-16 lg:pt-0 transition-all duration-300 ${
+        sidebarOpen && !isMobile ? 'lg:ml-64' : 'lg:ml-0'
+      }`}>
         <header className="relative z-10 bg-white/5 backdrop-blur-lg border-b border-white/10 px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex items-center gap-3 lg:gap-4">
+            <div className={`flex items-center gap-3 lg:gap-4 ${!sidebarOpen && !isMobile ? 'lg:ml-10' : ''}`}>
               <Link href="/dashboard" className="p-2 hover:bg-white/10 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center">
                 <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
               </Link>
