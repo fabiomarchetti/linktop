@@ -110,44 +110,44 @@ export default function HomePage() {
       </button>
 
       {/* Main Content */}
-      <div className="relative z-10 w-full max-w-5xl flex flex-col h-full max-h-[88vh] justify-center">
+      <div className="relative z-10 w-full max-w-5xl flex flex-col h-full max-h-[88vh] justify-start pt-6 sm:pt-8">
         {/* Header - Ottimizzato per 600x960 */}
-        <div className="text-center mb-1 sm:mb-2 lg:mb-4">
-          <div className="mx-auto w-9 h-9 sm:w-11 sm:h-11 lg:w-14 lg:h-14 bg-white/20 backdrop-blur-lg rounded-full flex items-center justify-center shadow-2xl border border-white/30">
-            <Heart className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-white" />
+        <div className="text-center mb-3 sm:mb-4 lg:mb-6">
+          <div className="mx-auto w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-white/20 backdrop-blur-lg rounded-full flex items-center justify-center shadow-2xl border-2 border-white/30 mb-2">
+            <Heart className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-white" />
           </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white drop-shadow-2xl -mt-1">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white drop-shadow-2xl">
             Monitoraggio Salute
           </h1>
         </div>
 
         {/* Choice Cards - Sempre 2 colonne, ottimizzato per 600x960 */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4 max-w-xl sm:max-w-2xl lg:max-w-3xl mx-auto w-full px-1">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5 max-w-lg sm:max-w-xl lg:max-w-2xl mx-auto w-full px-2">
           {/* Card Paziente */}
           <button
             onClick={() => router.push('/utente')}
-            className="group bg-white/10 backdrop-blur-xl rounded-lg sm:rounded-xl p-2.5 sm:p-3 lg:p-5 shadow-2xl border border-white/20 hover:border-white/40 transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+            className="group bg-white/10 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 shadow-2xl border-2 border-white/20 hover:border-white/40 transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-white/50"
           >
-            <div className="flex flex-col items-center gap-1.5 sm:gap-2 lg:gap-3">
+            <div className="flex flex-col items-center gap-2 sm:gap-3 lg:gap-4">
               {/* Icon */}
-              <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-18 lg:h-18 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:shadow-emerald-400/50 transition-all">
-                <UserCircle className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white" />
+              <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:shadow-emerald-400/50 transition-all">
+                <UserCircle className="w-8 h-8 sm:w-9 sm:h-9 lg:w-11 lg:h-11 text-white" />
               </div>
 
               {/* Title */}
               <div className="text-center">
-                <h2 className="text-sm sm:text-base lg:text-lg font-black text-white">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-black text-white">
                   Paziente
                 </h2>
-                <p className="text-[9px] sm:text-[10px] lg:text-xs text-teal-100 font-medium">
+                <p className="text-xs sm:text-sm lg:text-base text-teal-100 font-medium">
                   Codice Fiscale
                 </p>
               </div>
 
               {/* Arrow */}
-              <div className="flex items-center gap-1 text-white font-bold text-xs sm:text-sm group-hover:gap-1.5 transition-all">
+              <div className="flex items-center gap-1.5 text-white font-bold text-sm sm:text-base group-hover:gap-2 transition-all">
                 <span>Accedi</span>
-                <span className="text-sm sm:text-base">→</span>
+                <span className="text-base sm:text-lg">→</span>
               </div>
             </div>
           </button>
@@ -155,28 +155,28 @@ export default function HomePage() {
           {/* Card Staff */}
           <button
             onClick={() => router.push('/login')}
-            className="group bg-white/10 backdrop-blur-xl rounded-lg sm:rounded-xl p-2.5 sm:p-3 lg:p-5 shadow-2xl border border-white/20 hover:border-white/40 transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+            className="group bg-white/10 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 shadow-2xl border-2 border-white/20 hover:border-white/40 transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-white/50"
           >
-            <div className="flex flex-col items-center gap-1.5 sm:gap-2 lg:gap-3">
+            <div className="flex flex-col items-center gap-2 sm:gap-3 lg:gap-4">
               {/* Icon */}
-              <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-18 lg:h-18 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:shadow-cyan-400/50 transition-all">
-                <Stethoscope className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white" />
+              <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:shadow-cyan-400/50 transition-all">
+                <Stethoscope className="w-8 h-8 sm:w-9 sm:h-9 lg:w-11 lg:h-11 text-white" />
               </div>
 
               {/* Title */}
               <div className="text-center">
-                <h2 className="text-sm sm:text-base lg:text-lg font-black text-white">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-black text-white">
                   Staff
                 </h2>
-                <p className="text-[9px] sm:text-[10px] lg:text-xs text-teal-100 font-medium">
+                <p className="text-xs sm:text-sm lg:text-base text-teal-100 font-medium">
                   Personale autorizzato
                 </p>
               </div>
 
               {/* Arrow */}
-              <div className="flex items-center gap-1 text-white font-bold text-xs sm:text-sm group-hover:gap-1.5 transition-all">
+              <div className="flex items-center gap-1.5 text-white font-bold text-sm sm:text-base group-hover:gap-2 transition-all">
                 <span>Accedi</span>
-                <span className="text-sm sm:text-base">→</span>
+                <span className="text-base sm:text-lg">→</span>
               </div>
             </div>
           </button>
