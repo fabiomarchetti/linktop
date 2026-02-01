@@ -67,13 +67,13 @@ export default function HealthMonitorPage() {
   // CALIBRAZIONE DINAMICA - Offset personalizzabili per SpO2 e HR
   // ============================================================================
   const [spo2CalibrationOffset, setSpo2CalibrationOffset] = useState<number>(4) // Default +4% (Apple Watch calibration)
-  const SPO2_OFFSET_MIN = -5
-  const SPO2_OFFSET_MAX = 10
+  const SPO2_OFFSET_MIN = -20
+  const SPO2_OFFSET_MAX = 20
   const SPO2_OFFSET_DEFAULT = 4
 
   const [hrCalibrationOffset, setHrCalibrationOffset] = useState<number>(0) // Default 0 BPM (nessuna correzione)
-  const HR_OFFSET_MIN = -10
-  const HR_OFFSET_MAX = 10
+  const HR_OFFSET_MIN = -20
+  const HR_OFFSET_MAX = 20
   const HR_OFFSET_DEFAULT = 0
 
   // Pressione Sanguigna (sistolica e diastolica separate)
