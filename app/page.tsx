@@ -111,12 +111,12 @@ export default function HomePage() {
 
       {/* Main Content */}
       <div className="relative z-10 w-full max-w-5xl flex flex-col h-full max-h-[88vh] justify-center">
-        {/* Header - Ultra Compatto per 600x960 */}
-        <div className="text-center mb-1 sm:mb-3 lg:mb-5">
-          <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 lg:w-14 lg:h-14 bg-white/20 backdrop-blur-lg rounded-full flex items-center justify-center mb-1 shadow-2xl border border-white/30">
-            <Heart className="w-4 h-4 sm:w-5 sm:h-5 lg:w-7 lg:h-7 text-white" />
+        {/* Header - Ottimizzato per 600x960 */}
+        <div className="text-center mb-1 sm:mb-2 lg:mb-4">
+          <div className="mx-auto w-9 h-9 sm:w-11 sm:h-11 lg:w-14 lg:h-14 bg-white/20 backdrop-blur-lg rounded-full flex items-center justify-center shadow-2xl border border-white/30">
+            <Heart className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-white" />
           </div>
-          <h1 className="text-xl sm:text-2xl lg:text-4xl font-black text-white drop-shadow-2xl">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white drop-shadow-2xl -mt-1">
             Monitoraggio Salute
           </h1>
         </div>
