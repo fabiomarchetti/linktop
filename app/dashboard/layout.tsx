@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePageTracking } from '@/hooks/usePageTracking'
+import { SidebarProvider } from '@/contexts/SidebarContext'
 
 export default function DashboardLayout({
   children,
@@ -74,5 +75,5 @@ export default function DashboardLayout({
     return null
   }
 
-  return <>{children}</>
+  return <SidebarProvider>{children}</SidebarProvider>
 }

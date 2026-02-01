@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -20,8 +20,11 @@ import {
   FileText,
   ScrollText,
   Bell,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSidebar } from "@/contexts/SidebarContext";
 
 interface MenuItem {
   icon: React.ReactNode;
@@ -113,33 +116,16 @@ const menuItems: MenuItem[] = [
 ];
 
 export default function Sidebar() {
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Chiuso di default su mobile
-  const [isMobile, setIsMobile] = useState(false);
+  const { isOpen: sidebarOpen, isMobile, toggle, close } = useSidebar();
   const { user, logout } = useAuth();
   const pathname = usePathname();
-
-  // Gestisce resize e imposta stato iniziale
-  useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 1024; // lg breakpoint
-      setIsMobile(mobile);
-      // Su desktop, sidebar aperta di default
-      if (!mobile) {
-        setSidebarOpen(true);
-      }
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   // Chiudi sidebar quando si cambia pagina su mobile
   useEffect(() => {
     if (isMobile) {
-      setSidebarOpen(false);
+      close();
     }
-  }, [pathname, isMobile]);
+  }, [pathname, isMobile, close]);
 
   if (!user) return null;
 
@@ -158,7 +144,7 @@ export default function Sidebar() {
       {/* Mobile Header con Hamburger */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-slate-900/95 backdrop-blur-xl border-b border-white/10 px-4 py-3 flex items-center justify-between">
         <button
-          onClick={() => setSidebarOpen(true)}
+          onClick={toggle}
           className="p-2 hover:bg-white/10 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
           aria-label="Apri menu"
         >
@@ -179,7 +165,7 @@ export default function Sidebar() {
       {isMobile && sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={close}
         />
       )}
 
@@ -188,7 +174,7 @@ export default function Sidebar() {
         className={`fixed left-0 top-0 h-full bg-slate-900/95 lg:bg-white/5 backdrop-blur-xl border-r border-white/10 transition-all duration-300 z-50 ${
           sidebarOpen
             ? "w-72 lg:w-64 translate-x-0"
-            : "-translate-x-full lg:translate-x-0 lg:w-20"
+            : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full">
@@ -199,7 +185,7 @@ export default function Sidebar() {
                 <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
                   <Activity className="w-6 h-6 text-white" />
                 </div>
-                {(sidebarOpen || isMobile) && (
+                {sidebarOpen && (
                   <div>
                     <span className="text-xl font-bold text-white block">
                       LINKTOP
@@ -208,21 +194,19 @@ export default function Sidebar() {
                   </div>
                 )}
               </div>
-              {/* Pulsante chiudi solo su mobile */}
-              {isMobile && (
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center lg:hidden"
-                  aria-label="Chiudi menu"
-                >
-                  <X className="w-6 h-6 text-white" />
-                </button>
-              )}
+              {/* Pulsante chiudi */}
+              <button
+                onClick={close}
+                className="p-2 hover:bg-white/10 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label="Chiudi menu"
+              >
+                <X className="w-6 h-6 text-white" />
+              </button>
             </div>
           </div>
 
           {/* User Info */}
-          {(sidebarOpen || isMobile) && (
+          {sidebarOpen && (
             <div className="p-4 border-b border-white/10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
@@ -250,8 +234,8 @@ export default function Sidebar() {
                   label={item.label}
                   href={item.href}
                   active={pathname === item.href}
-                  sidebarOpen={sidebarOpen || isMobile}
-                  onClick={() => isMobile && setSidebarOpen(false)}
+                  sidebarOpen={sidebarOpen}
+                  onClick={() => isMobile && close()}
                 />
                 {item.dividerAfter && (
                   <div className="my-2 lg:my-3 border-t border-white/10"></div>
@@ -264,28 +248,26 @@ export default function Sidebar() {
           <div className="p-3 lg:p-4 border-t border-white/10">
             <button
               onClick={logout}
-              className={`w-full px-4 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-all flex items-center min-h-[48px] ${
-                sidebarOpen || isMobile ? "gap-3" : "justify-center"
-              }`}
+              className="w-full px-4 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-all flex items-center min-h-[48px] gap-3"
             >
               <LogOut className="w-5 h-5" />
-              {(sidebarOpen || isMobile) && <span className="text-base font-semibold">Esci</span>}
+              <span className="text-base font-semibold">Esci</span>
             </button>
           </div>
         </div>
 
-        {/* Toggle Button - Solo desktop */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="hidden lg:flex absolute -right-3 top-6 w-6 h-6 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full items-center justify-center shadow-lg hover:shadow-xl transition-all"
-        >
-          {sidebarOpen ? (
-            <X className="w-4 h-4 text-white" />
-          ) : (
-            <Menu className="w-4 h-4 text-white" />
-          )}
-        </button>
       </aside>
+
+      {/* Toggle Button - Visibile quando sidebar è chiusa su desktop */}
+      {!sidebarOpen && !isMobile && (
+        <button
+          onClick={toggle}
+          className="fixed left-2 top-2 z-30 p-2 bg-slate-800/90 hover:bg-slate-700 backdrop-blur-lg rounded-lg transition-all border border-white/10 shadow-lg"
+          aria-label="Apri menu"
+        >
+          <Menu className="w-5 h-5 text-white" />
+        </button>
+      )}
     </>
   );
 }
@@ -295,14 +277,13 @@ function SidebarMenuItem({
   label,
   href,
   active = false,
-  sidebarOpen,
   onClick,
 }: {
   icon: React.ReactNode;
   label: string;
   href: string;
   active?: boolean;
-  sidebarOpen: boolean;
+  sidebarOpen?: boolean;
   onClick?: () => void;
 }) {
   return (
@@ -313,10 +294,10 @@ function SidebarMenuItem({
         active
           ? "bg-gradient-to-r from-emerald-500/20 to-teal-600/20 text-white border border-emerald-500/30"
           : "text-gray-400 hover:text-white hover:bg-white/10"
-      } ${sidebarOpen ? "" : "justify-center"}`}
+      }`}
     >
       {icon}
-      {sidebarOpen && <span className="font-semibold text-base">{label}</span>}
+      <span className="font-semibold text-base">{label}</span>
     </Link>
   );
 }
