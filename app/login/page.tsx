@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Activity } from 'lucide-react'
+import { Activity, Maximize2, Minimize2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function LoginPage() {
@@ -14,6 +14,31 @@ export default function LoginPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  // Gestione fullscreen
+  const toggleFullscreen = useCallback(async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen()
+        setIsFullscreen(true)
+      } else {
+        await document.exitFullscreen()
+        setIsFullscreen(false)
+      }
+    } catch (err) {
+      console.error('Fullscreen error:', err)
+    }
+  }, [])
+
+  // Listener per cambio stato fullscreen (es. ESC)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,7 +86,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-600 via-teal-700 to-cyan-800 p-4 relative overflow-hidden">
+    <div className="h-screen flex items-start sm:items-center justify-center bg-gradient-to-br from-emerald-600 via-teal-700 to-cyan-800 p-2 sm:p-4 pt-8 sm:pt-4 relative overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       {/* Background Animation */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -inset-[10px] opacity-50">
@@ -71,28 +96,41 @@ export default function LoginPage() {
         </div>
       </div>
 
+      {/* Fullscreen Button */}
+      <button
+        onClick={toggleFullscreen}
+        className="absolute top-2 right-2 z-20 p-1.5 sm:p-2 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-full transition-all border border-white/30"
+        title={isFullscreen ? 'Esci da schermo intero' : 'Schermo intero'}
+      >
+        {isFullscreen ? (
+          <Minimize2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+        ) : (
+          <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+        )}
+      </button>
+
       <div className="max-w-md w-full relative z-10">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-lg rounded-full mb-4 shadow-2xl border border-white/30">
-            <Activity className="w-10 h-10 text-white" />
+        <div className="text-center mb-4 sm:mb-6">
+          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-white/20 backdrop-blur-lg rounded-full mb-2 sm:mb-3 shadow-2xl border border-white/30">
+            <Activity className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">Accedi</h1>
-          <p className="text-emerald-100 text-lg">LINKTOP Health Monitor</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 drop-shadow-lg">Monitoraggio Salute</h1>
+          <p className="text-emerald-100 text-sm sm:text-base">Area Staff</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/50">
+        <div className="bg-white/95 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-6 border border-white/50">
           {error && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-300 rounded-xl shadow-lg">
-              <p className="text-red-800 font-semibold">✗ {error}</p>
+            <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-300 rounded-xl">
+              <p className="text-red-800 font-semibold text-sm sm:text-base">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             {/* Username */}
             <div>
-              <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Username
               </label>
               <input
@@ -101,7 +139,7 @@ export default function LoginPage() {
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 hover:border-gray-300"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 hover:border-gray-300 text-base"
                 required
                 autoFocus
               />
@@ -109,7 +147,7 @@ export default function LoginPage() {
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Password
               </label>
               <input
@@ -118,7 +156,7 @@ export default function LoginPage() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 hover:border-gray-300"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 hover:border-gray-300 text-base"
                 required
               />
             </div>
@@ -127,17 +165,17 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-4 rounded-xl font-bold text-lg hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 sm:py-3.5 rounded-xl font-bold text-base sm:text-lg hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
-              {loading ? '⏳ Accesso in corso...' : '→ Accedi'}
+              {loading ? 'Accesso in corso...' : 'Accedi'}
             </button>
           </form>
         </div>
 
         {/* Footer Info */}
-        <div className="mt-6 text-center">
-          <p className="text-white/90 text-sm">
-            👨‍⚕️ Sistema riservato al personale autorizzato
+        <div className="mt-3 sm:mt-4 text-center">
+          <p className="text-white/90 text-xs sm:text-sm">
+            Sistema riservato al personale autorizzato
           </p>
         </div>
       </div>
