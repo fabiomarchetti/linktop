@@ -106,7 +106,7 @@ export default function DashboardPage() {
         sidebarOpen && !isMobile ? 'lg:ml-64' : 'lg:ml-0'
       }`}>
         {/* Header */}
-        <div className="mb-4 lg:mb-6">
+        <div className="mb-4 lg:mb-6 text-center">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1">
             Monitoraggio Salute
           </h1>
