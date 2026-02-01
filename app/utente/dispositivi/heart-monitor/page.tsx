@@ -287,24 +287,20 @@ export default function UtenteHeartMonitorPage() {
           return
         }
 
+        // I valori in finalMeasurementsRef hanno GIA' la calibrazione applicata da calculateVitals
         const finalSpo2 = calculateMedian(finalMeasurementsRef.current.spo2)
         const finalHr = finalMeasurementsRef.current.hr.length > 0
           ? calculateMedian(finalMeasurementsRef.current.hr)
           : 0
 
-        // Apply calibration
-        const calibratedSpo2 = finalSpo2 + spo2OffsetRef.current
-        const calibratedHr = finalHr + hrOffsetRef.current
-
-        console.log(`📊 RISULTATI FINALI: SpO2: ${calibratedSpo2}% | HR: ${calibratedHr} BPM`)
-        console.log(`📊 Valori raw: SpO2: ${finalSpo2}% | HR: ${finalHr} BPM`)
-        console.log(`📊 Offset applicati: SpO2: ${spo2OffsetRef.current} | HR: ${hrOffsetRef.current}`)
+        console.log(`📊 RISULTATI FINALI: SpO2: ${finalSpo2}% | HR: ${finalHr} BPM`)
+        console.log(`📊 Offset gia' applicati in calculateVitals: SpO2: ${spo2OffsetRef.current} | HR: ${hrOffsetRef.current}`)
 
         setMeasurements(prev => {
           const newMeasurements = {
             ...prev,
-            heartRate: calibratedHr,
-            spo2: calibratedSpo2
+            heartRate: finalHr,
+            spo2: finalSpo2
           }
           console.log('📊 setMeasurements chiamato con:', newMeasurements)
           return newMeasurements
@@ -440,24 +436,25 @@ export default function UtenteHeartMonitorPage() {
         const payload = packet.slice(6, 6 + payloadLen)
         console.log(`📊 Payload length: ${payload.length} bytes`)
 
-        for (let i = 0; i + 3 < payload.length; i += 4) {
-          const redLow = payload[i]
-          const redHigh = payload[i + 1]
-          const irLow = payload[i + 2]
-          const irHigh = payload[i + 3]
+        // Parsing PPG a 24-bit (3 byte per canale) - IDENTICO alla pagina staff
+        for (let i = 0; i + 5 < payload.length; i += 6) {
+          const red1 = (payload[i] << 16) | (payload[i + 1] << 8) | payload[i + 2]
+          const ir1 = (payload[i + 3] << 16) | (payload[i + 4] << 8) | payload[i + 5]
 
-          const redValue = (redHigh << 8) | redLow
-          const irValue = (irHigh << 8) | irLow
+          // Swap canali (come nella pagina staff)
+          const red = ir1
+          const ir = red1
 
-          ppgSamplesRef.current.red.push(redValue)
-          ppgSamplesRef.current.ir.push(irValue)
+          ppgSamplesRef.current.red.push(red)
+          ppgSamplesRef.current.ir.push(ir)
         }
 
         console.log(`📊 PPG samples: RED=${ppgSamplesRef.current.red.length}, IR=${ppgSamplesRef.current.ir.length}`)
 
-        if (ppgSamplesRef.current.red.length > 300) {
-          ppgSamplesRef.current.red = ppgSamplesRef.current.red.slice(-250)
-          ppgSamplesRef.current.ir = ppgSamplesRef.current.ir.slice(-250)
+        // Buffer size identico alla pagina staff (200)
+        if (ppgSamplesRef.current.red.length > 200) {
+          ppgSamplesRef.current.red.shift()
+          ppgSamplesRef.current.ir.shift()
         }
 
         if (ppgSamplesRef.current.red.length >= 100) {
@@ -753,6 +750,75 @@ export default function UtenteHeartMonitorPage() {
     }
   }
 
+  // Ferma misurazione in corso
+  const stopMeasurement = async () => {
+    if (!writeCharacteristicRef.current) return
+
+    try {
+      ppgSamplesRef.current = { red: [], ir: [] }
+      resetSpo2Timer()
+
+      bpPressureArrayRef.current = []
+      bpCalibrationRef.current = {
+        C1: 0, C2: 0, C3: 0, C4: 0, C5: 0,
+        sensibility: 0, baseline: 0, sampleCount: 0, baselineSum: 0
+      }
+      if (bpTimerRef.current) {
+        clearTimeout(bpTimerRef.current)
+        bpTimerRef.current = null
+      }
+
+      const stopPayload = new Uint8Array([1])
+      const stopCmd = new Uint8Array(10)
+
+      stopCmd[0] = 0x01
+      stopCmd[1] = stopPayload.length & 0xFF
+      stopCmd[2] = (stopPayload.length >> 8) & 0xFF
+      stopCmd[3] = 0x04
+      stopCmd[4] = 0x04
+
+      let checksum1 = 0
+      for (let i = 0; i < 5; i++) {
+        checksum1 ^= stopCmd[i]
+      }
+      stopCmd[5] = checksum1
+      stopCmd[6] = stopPayload[0]
+
+      let checksum2 = 0xFFFF
+      for (let i = 0; i < 7; i++) {
+        checksum2 = ((((checksum2 << 8) | ((checksum2 >> 8) & 0xFF)) & 0xFFFF) ^ stopCmd[i]) & 0xFFFF
+        const temp = (checksum2 ^ ((checksum2 & 0xFF) >> 4)) & 0xFFFF
+        const temp2 = (temp ^ ((temp << 8) << 4)) & 0xFFFF
+        checksum2 = (temp2 ^ (((temp2 & 0xFF) << 4) << 1)) & 0xFFFF
+      }
+
+      stopCmd[7] = checksum2 & 0xFF
+      stopCmd[8] = (checksum2 >> 8) & 0xFF
+      stopCmd[9] = 0xFF
+
+      await writeCharacteristicRef.current.writeValue(stopCmd)
+
+      updateMeasuringState(false)
+      console.log('⏹️ Misurazione interrotta')
+      playBeep(400, 200)
+
+    } catch (error: any) {
+      console.error('❌ Errore stop:', error)
+    }
+  }
+
+  // Disconnetti e ricarica pagina
+  const handleReload = async () => {
+    try {
+      if (deviceRef.current?.gatt?.connected) {
+        deviceRef.current.gatt.disconnect()
+      }
+      window.location.reload()
+    } catch (error) {
+      window.location.reload()
+    }
+  }
+
   // Invia comando BLE per avviare misurazione - PROTOCOLLO STAFF
   const startMeasurement = async (type: string) => {
     if (!device?.isConnected || !writeCharacteristicRef.current) {
@@ -969,6 +1035,12 @@ export default function UtenteHeartMonitorPage() {
                   Disconnetti
                 </button>
               </div>
+              <button
+                onClick={handleReload}
+                className="w-full px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold transition-all text-lg"
+              >
+                🔄 Ricarica Pagina
+              </button>
             </div>
 
             {/* Measurement Buttons */}
@@ -1031,6 +1103,14 @@ export default function UtenteHeartMonitorPage() {
                     </p>
                   </div>
                 )}
+
+                {/* Pulsante Ferma Misurazione */}
+                <button
+                  onClick={stopMeasurement}
+                  className="w-full mt-4 px-6 py-3 bg-gray-700 hover:bg-gray-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+                >
+                  ⏹️ FERMA MISURAZIONE
+                </button>
               </div>
             )}
 
