@@ -158,29 +158,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Info Card */}
-        <div className="bg-white/5 backdrop-blur-xl rounded-lg lg:rounded-xl p-3 sm:p-4 lg:p-6 border border-white/10">
-          <h2 className="text-base sm:text-lg lg:text-xl font-bold text-white mb-2 lg:mb-3">
-            Sistema Monitoraggio Salute
-          </h2>
-          <p className="text-gray-300 text-xs sm:text-sm mb-3">
-            Sistema integrato per dispositivi medici LINKTOP. Gestisci pazienti, esegui misurazioni e monitora in tempo reale.
-          </p>
-          <div className="grid grid-cols-3 gap-2 lg:gap-3">
-            <FeatureCard
-              title="Health Monitor"
-              features={['SpO2', 'Heart Rate', 'Blood Pressure', 'Temperature']}
-            />
-            <FeatureCard
-              title="Stetoscopio"
-              features={['Auscultazione', 'Registrazione', 'Analisi Suoni']}
-            />
-            <FeatureCard
-              title="Otoscopio"
-              features={['Ispezione', 'Immagini', 'Zoom Digitale']}
-            />
-          </div>
-        </div>
       </main>
     </div>
   )
@@ -213,18 +190,3 @@ function QuickActionCard({
   )
 }
 
-function FeatureCard({ title, features }: { title: string; features: string[] }) {
-  return (
-    <div className="bg-white/5 rounded-lg p-2 sm:p-3 border border-white/10">
-      <h3 className="text-white font-semibold mb-1.5 text-[10px] sm:text-xs">{title}</h3>
-      <ul className="space-y-1">
-        {features.map((feature, index) => (
-          <li key={index} className="text-gray-400 text-[9px] sm:text-[10px] flex items-center gap-1">
-            <span className="w-1 h-1 bg-emerald-500 rounded-full flex-shrink-0"></span>
-            {feature}
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
