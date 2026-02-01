@@ -221,35 +221,35 @@ export default function StatistichePage() {
 
       <Sidebar />
 
-      <main className="ml-64 transition-all duration-300">
-        <header className="relative z-10 bg-white/5 backdrop-blur-lg border-b border-white/10 px-8 py-6">
+      <main className="pt-16 lg:pt-0 lg:ml-64 transition-all duration-300">
+        <header className="relative z-10 bg-white/5 backdrop-blur-lg border-b border-white/10 px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="p-2 hover:bg-white/10 rounded-lg transition-all">
-                <ArrowLeft className="w-6 h-6 text-white" />
+            <div className="flex items-center gap-3 lg:gap-4">
+              <Link href="/dashboard" className="p-2 hover:bg-white/10 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center">
+                <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
               </Link>
               <div>
-                <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                  <TrendingUp className="w-8 h-8" />
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white flex items-center gap-2 lg:gap-3">
+                  <TrendingUp className="w-6 h-6 lg:w-8 lg:h-8" />
                   Statistiche Salute
                 </h1>
-                <p className="text-gray-300 mt-1">Analisi e trend delle misurazioni</p>
+                <p className="text-gray-300 text-sm lg:text-base mt-1">Analisi e trend delle misurazioni</p>
               </div>
             </div>
           </div>
         </header>
 
-        <div className="relative z-10 p-8 space-y-6">
+        <div className="relative z-10 p-4 sm:p-6 lg:p-8 space-y-4 lg:space-y-6">
           {/* Selezione Paziente */}
-          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6">
-            <h2 className="text-white font-semibold mb-3 flex items-center gap-2">
+          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-6">
+            <h2 className="text-white font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
               <Users className="w-5 h-5" />
               Seleziona Paziente
             </h2>
             <select
               value={selectedPazienteId || ''}
               onChange={(e) => setSelectedPazienteId(e.target.value ? Number(e.target.value) : null)}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+              className="w-full px-3 sm:px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-emerald-500 cursor-pointer min-h-[48px] text-sm sm:text-base"
             >
               <option value="" className="bg-slate-900">Seleziona un paziente...</option>
               {pazienti.map((p) => (
@@ -263,41 +263,41 @@ export default function StatistichePage() {
           {selectedPazienteId ? (
             <>
               {/* Info Paziente + Intervallo Date */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                 {/* Paziente Selezionato */}
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6">
-                  <p className="text-emerald-300 text-sm mb-2">Paziente selezionato</p>
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 lg:p-6">
+                  <p className="text-emerald-300 text-xs sm:text-sm mb-2">Paziente selezionato</p>
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-base lg:text-lg flex-shrink-0">
                       {selectedPatient?.nome.charAt(0)}{selectedPatient?.cognome.charAt(0)}
                     </div>
-                    <div>
-                      <p className="text-white font-bold text-xl">
+                    <div className="min-w-0">
+                      <p className="text-white font-bold text-base sm:text-lg lg:text-xl truncate">
                         {selectedPatient?.cognome} {selectedPatient?.nome}
                       </p>
-                      <p className="text-gray-300 text-sm">{selectedPatient?.codice_fiscale}</p>
+                      <p className="text-gray-300 text-xs sm:text-sm truncate">{selectedPatient?.codice_fiscale}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Intervallo Date */}
-                <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-                  <p className="text-gray-300 text-sm mb-3 flex items-center gap-2">
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4 lg:p-6">
+                  <p className="text-gray-300 text-xs sm:text-sm mb-3 flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     Intervallo Temporale
                   </p>
-                  <div className="grid grid-cols-5 gap-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                     {[
-                      { value: '7d', label: '7 giorni' },
-                      { value: '30d', label: '30 giorni' },
-                      { value: '3m', label: '3 mesi' },
-                      { value: '6m', label: '6 mesi' },
+                      { value: '7d', label: '7gg' },
+                      { value: '30d', label: '30gg' },
+                      { value: '3m', label: '3m' },
+                      { value: '6m', label: '6m' },
                       { value: 'all', label: 'Tutto' }
                     ].map(option => (
                       <button
                         key={option.value}
                         onClick={() => setDateRange(option.value as DateRange)}
-                        className={`px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        className={`px-2 sm:px-3 py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all min-h-[44px] ${
                           dateRange === option.value
                             ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white'
                             : 'bg-white/10 text-gray-300 hover:bg-white/20'
@@ -310,78 +310,80 @@ export default function StatistichePage() {
                 </div>
               </div>
 
-              {/* Tab Navigation */}
-              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-2 flex gap-2">
-                <button
-                  onClick={() => setActiveTab('heartrate')}
-                  className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                    activeTab === 'heartrate'
-                      ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg'
-                      : 'text-gray-300 hover:bg-white/10'
-                  }`}
-                >
-                  <Heart className="w-4 h-4" />
-                  Battito Cardiaco
-                </button>
-                <button
-                  onClick={() => setActiveTab('spo2')}
-                  className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                    activeTab === 'spo2'
-                      ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg'
-                      : 'text-gray-300 hover:bg-white/10'
-                  }`}
-                >
-                  <Droplet className="w-4 h-4" />
-                  Saturazione O2
-                </button>
-                <button
-                  onClick={() => setActiveTab('temperature')}
-                  className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                    activeTab === 'temperature'
-                      ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-lg'
-                      : 'text-gray-300 hover:bg-white/10'
-                  }`}
-                >
-                  <Thermometer className="w-4 h-4" />
-                  Temperatura
-                </button>
-                <button
-                  onClick={() => setActiveTab('pressure')}
-                  className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                    activeTab === 'pressure'
-                      ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg'
-                      : 'text-gray-300 hover:bg-white/10'
-                  }`}
-                >
-                  <Activity className="w-4 h-4" />
-                  Pressione
-                </button>
+              {/* Tab Navigation - Scrollabile su mobile */}
+              <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-1.5 sm:p-2 overflow-x-auto">
+                <div className="flex gap-1 sm:gap-2 min-w-max lg:min-w-0">
+                  <button
+                    onClick={() => setActiveTab('heartrate')}
+                    className={`flex-shrink-0 lg:flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] text-sm sm:text-base ${
+                      activeTab === 'heartrate'
+                        ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg'
+                        : 'text-gray-300 hover:bg-white/10'
+                    }`}
+                  >
+                    <Heart className="w-4 h-4" />
+                    <span className="whitespace-nowrap">Battito</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('spo2')}
+                    className={`flex-shrink-0 lg:flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] text-sm sm:text-base ${
+                      activeTab === 'spo2'
+                        ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg'
+                        : 'text-gray-300 hover:bg-white/10'
+                    }`}
+                  >
+                    <Droplet className="w-4 h-4" />
+                    <span className="whitespace-nowrap">SpO2</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('temperature')}
+                    className={`flex-shrink-0 lg:flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] text-sm sm:text-base ${
+                      activeTab === 'temperature'
+                        ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-lg'
+                        : 'text-gray-300 hover:bg-white/10'
+                    }`}
+                  >
+                    <Thermometer className="w-4 h-4" />
+                    <span className="whitespace-nowrap">Temp.</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('pressure')}
+                    className={`flex-shrink-0 lg:flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] text-sm sm:text-base ${
+                      activeTab === 'pressure'
+                        ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg'
+                        : 'text-gray-300 hover:bg-white/10'
+                    }`}
+                  >
+                    <Activity className="w-4 h-4" />
+                    <span className="whitespace-nowrap">Pressione</span>
+                  </button>
+                </div>
               </div>
 
               {/* Chart Area */}
               {loading ? (
-                <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-12 text-center">
-                  <RefreshCw className="w-12 h-12 text-emerald-400 animate-spin mx-auto mb-4" />
-                  <p className="text-white">Caricamento dati...</p>
+                <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl lg:rounded-2xl p-8 lg:p-12 text-center">
+                  <RefreshCw className="w-10 h-10 lg:w-12 lg:h-12 text-emerald-400 animate-spin mx-auto mb-4" />
+                  <p className="text-white text-sm sm:text-base">Caricamento dati...</p>
                 </div>
               ) : chartData.length === 0 ? (
-                <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-12 text-center">
-                  <BarChart3 className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-                  <p className="text-white text-lg">Nessun dato disponibile</p>
-                  <p className="text-gray-400 mt-2">Prova a selezionare un intervallo temporale diverso</p>
+                <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl lg:rounded-2xl p-8 lg:p-12 text-center">
+                  <BarChart3 className="w-12 h-12 lg:w-16 lg:h-16 text-gray-500 mx-auto mb-4" />
+                  <p className="text-white text-base lg:text-lg">Nessun dato disponibile</p>
+                  <p className="text-gray-400 mt-2 text-sm">Prova a selezionare un intervallo temporale diverso</p>
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-4 lg:space-y-6">
                   {/* Grafico Principale - Line Chart */}
-                  <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6">
-                    <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5" />
+                  <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-6">
+                    <h3 className="text-white font-bold text-sm sm:text-base lg:text-lg mb-3 lg:mb-4 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 lg:w-5 lg:h-5" />
                       {activeTab === 'heartrate' && 'Trend Battito Cardiaco'}
                       {activeTab === 'spo2' && 'Trend Saturazione Ossigeno'}
                       {activeTab === 'temperature' && 'Trend Temperatura'}
                       {activeTab === 'pressure' && 'Trend Pressione Sanguigna'}
                     </h3>
-                    <ResponsiveContainer width="100%" height={400}>
+                    <ResponsiveContainer width="100%" height={300} className="lg:!h-[400px]">
                       {activeTab === 'pressure' ? (
                         <LineChart data={chartData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />

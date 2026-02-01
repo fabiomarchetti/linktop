@@ -61,7 +61,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-600 via-emerald-700 to-green-800 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-teal-600 via-emerald-700 to-green-800 flex items-center justify-center p-3 sm:p-4 relative overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       {/* Background Animation */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -inset-[10px] opacity-30">
@@ -72,58 +72,47 @@ export default function HomePage() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 w-full max-w-6xl">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="mx-auto w-24 h-24 bg-white/20 backdrop-blur-lg rounded-full flex items-center justify-center mb-6 shadow-2xl border-4 border-white/30">
-            <Heart className="w-12 h-12 text-white" />
+      <div className="relative z-10 w-full max-w-5xl flex flex-col h-full max-h-[95vh] justify-center">
+        {/* Header - Compatto */}
+        <div className="text-center mb-4 sm:mb-6 lg:mb-8">
+          <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-white/20 backdrop-blur-lg rounded-full flex items-center justify-center mb-2 sm:mb-3 shadow-2xl border-2 sm:border-4 border-white/30">
+            <Heart className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white" />
           </div>
-          <h1 className="text-5xl md:text-7xl font-black text-white mb-4 drop-shadow-2xl">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-1 drop-shadow-2xl">
             LINKTOP
           </h1>
-          <p className="text-2xl md:text-3xl text-teal-100 font-semibold">
+          <p className="text-base sm:text-lg lg:text-xl text-teal-100 font-semibold">
             Health Monitor System
-          </p>
-          <p className="text-lg md:text-xl text-white/80 mt-4">
-            Seleziona il tipo di accesso
           </p>
         </div>
 
-        {/* Choice Cards - Grid 2 colonne su desktop, 1 su mobile */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-5xl mx-auto">
+        {/* Choice Cards - Sempre 2 colonne su tablet */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6 max-w-4xl mx-auto w-full">
           {/* Card Paziente */}
           <button
             onClick={() => router.push('/utente')}
-            className="group bg-white/10 backdrop-blur-xl rounded-3xl p-8 md:p-12 shadow-2xl border-4 border-white/20 hover:border-white/40 transition-all hover:scale-105 hover:shadow-emerald-500/50 focus:outline-none focus:ring-4 focus:ring-white/50"
+            className="group bg-white/10 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl border-2 sm:border-4 border-white/20 hover:border-white/40 transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-emerald-500/50 focus:outline-none focus:ring-4 focus:ring-white/50"
           >
-            <div className="flex flex-col items-center gap-6">
+            <div className="flex flex-col items-center gap-3 sm:gap-4">
               {/* Icon */}
-              <div className="w-28 h-28 md:w-32 md:h-32 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:shadow-emerald-400/50 transition-all">
-                <UserCircle className="w-16 h-16 md:w-20 md:h-20 text-white" />
+              <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:shadow-emerald-400/50 transition-all">
+                <UserCircle className="w-9 h-9 sm:w-11 sm:h-11 lg:w-14 lg:h-14 text-white" />
               </div>
 
               {/* Title */}
               <div className="text-center">
-                <h2 className="text-3xl md:text-4xl font-black text-white mb-2">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-black text-white mb-1">
                   Sono un Paziente
                 </h2>
-                <p className="text-lg md:text-xl text-teal-100 font-medium">
+                <p className="text-xs sm:text-sm lg:text-base text-teal-100 font-medium">
                   Accedi con il tuo Codice Fiscale
                 </p>
               </div>
 
-              {/* Features */}
-              <div className="space-y-2 text-white/90 text-base md:text-lg">
-                <p>• Misurazioni parametri vitali</p>
-                <p>• Monitor cardiaco</p>
-                <p>• Stetoscopio digitale</p>
-                <p>• Otoscopio</p>
-              </div>
-
               {/* Arrow */}
-              <div className="mt-4 flex items-center gap-2 text-white font-bold text-xl group-hover:gap-4 transition-all">
+              <div className="flex items-center gap-2 text-white font-bold text-base sm:text-lg group-hover:gap-3 transition-all">
                 <span>Accedi</span>
-                <span className="text-2xl">→</span>
+                <span className="text-lg sm:text-xl">→</span>
               </div>
             </div>
           </button>
@@ -131,45 +120,36 @@ export default function HomePage() {
           {/* Card Staff */}
           <button
             onClick={() => router.push('/login')}
-            className="group bg-white/10 backdrop-blur-xl rounded-3xl p-8 md:p-12 shadow-2xl border-4 border-white/20 hover:border-white/40 transition-all hover:scale-105 hover:shadow-cyan-500/50 focus:outline-none focus:ring-4 focus:ring-white/50"
+            className="group bg-white/10 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl border-2 sm:border-4 border-white/20 hover:border-white/40 transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-cyan-500/50 focus:outline-none focus:ring-4 focus:ring-white/50"
           >
-            <div className="flex flex-col items-center gap-6">
+            <div className="flex flex-col items-center gap-3 sm:gap-4">
               {/* Icon */}
-              <div className="w-28 h-28 md:w-32 md:h-32 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:shadow-cyan-400/50 transition-all">
-                <Stethoscope className="w-16 h-16 md:w-20 md:h-20 text-white" />
+              <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:shadow-cyan-400/50 transition-all">
+                <Stethoscope className="w-9 h-9 sm:w-11 sm:h-11 lg:w-14 lg:h-14 text-white" />
               </div>
 
               {/* Title */}
               <div className="text-center">
-                <h2 className="text-3xl md:text-4xl font-black text-white mb-2">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-black text-white mb-1">
                   Sono dello Staff
                 </h2>
-                <p className="text-lg md:text-xl text-teal-100 font-medium">
+                <p className="text-xs sm:text-sm lg:text-base text-teal-100 font-medium">
                   Personale sanitario autorizzato
                 </p>
               </div>
 
-              {/* Features */}
-              <div className="space-y-2 text-white/90 text-base md:text-lg">
-                <p>• Gestione pazienti</p>
-                <p>• Analisi dati sanitari</p>
-                <p>• Dispositivi medici</p>
-                <p>• Report e statistiche</p>
-              </div>
-
               {/* Arrow */}
-              <div className="mt-4 flex items-center gap-2 text-white font-bold text-xl group-hover:gap-4 transition-all">
+              <div className="flex items-center gap-2 text-white font-bold text-base sm:text-lg group-hover:gap-3 transition-all">
                 <span>Accedi</span>
-                <span className="text-2xl">→</span>
+                <span className="text-lg sm:text-xl">→</span>
               </div>
             </div>
           </button>
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-12 text-white/70 text-sm md:text-base">
-          <p>Sistema di monitoraggio sanitario LINKTOP v1.0</p>
-          <p className="mt-2">Per assistenza contattare il supporto tecnico</p>
+        {/* Footer - Compatto */}
+        <div className="text-center mt-4 sm:mt-6 text-white/60 text-xs sm:text-sm">
+          <p>LINKTOP Health Monitor v1.0</p>
         </div>
       </div>
     </div>

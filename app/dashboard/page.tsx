@@ -85,52 +85,52 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <Sidebar />
 
-      <main className="ml-64 p-8 transition-all duration-300">
+      <main className="pt-16 lg:pt-0 lg:ml-64 p-4 sm:p-6 lg:p-8 transition-all duration-300">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">
+        <div className="mb-6 lg:mb-8">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">
             Dashboard LINKTOP
           </h1>
-          <p className="text-gray-400">
+          <p className="text-gray-400 text-sm sm:text-base">
             Benvenuto, <span className="text-emerald-400 font-semibold">{user.nome} {user.cognome}</span> ({user.ruolo})
           </p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8">
           {statsCards.map((stat, index) => (
             <div
               key={index}
-              className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 hover:border-emerald-500/50 transition-all"
+              className="bg-white/5 backdrop-blur-xl rounded-xl lg:rounded-2xl p-4 sm:p-5 lg:p-6 border border-white/10 hover:border-emerald-500/50 transition-all"
             >
-              <div className={`w-16 h-16 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center text-white mb-4 shadow-lg`}>
-                {stat.icon}
+              <div className={`w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-r ${stat.color} rounded-lg lg:rounded-xl flex items-center justify-center text-white mb-3 lg:mb-4 shadow-lg`}>
+                <div className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8">{stat.icon}</div>
               </div>
-              <p className="text-gray-400 text-sm mb-1">{stat.label}</p>
-              <p className="text-3xl font-bold text-white">{stat.value}</p>
+              <p className="text-gray-400 text-xs sm:text-sm mb-1">{stat.label}</p>
+              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">{stat.value}</p>
             </div>
           ))}
         </div>
 
         {/* Quick Actions - Nascosto per assistente_control_room */}
         {user.ruolo !== 'assistente_control_room' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 mb-6 lg:mb-8">
             <QuickActionCard
-              icon={<Heart className="w-6 h-6" />}
+              icon={<Heart className="w-5 h-5 sm:w-6 sm:h-6" />}
               title="Health Monitor"
               description="Misura parametri vitali"
               href="/dashboard/health-monitor"
               color="from-red-500 to-pink-600"
             />
             <QuickActionCard
-              icon={<Stethoscope className="w-6 h-6" />}
+              icon={<Stethoscope className="w-5 h-5 sm:w-6 sm:h-6" />}
               title="Stetoscopio Digitale"
               description="Auscultazione cardiaca"
               href="/dashboard/stetoscopio"
               color="from-blue-500 to-cyan-600"
             />
             <QuickActionCard
-              icon={<Eye className="w-6 h-6" />}
+              icon={<Eye className="w-5 h-5 sm:w-6 sm:h-6" />}
               title="Otoscopio Digitale"
               description="Ispezione orecchie"
               href="/dashboard/otoscopio"
@@ -140,15 +140,15 @@ export default function DashboardPage() {
         )}
 
         {/* Info Card */}
-        <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10">
-          <h2 className="text-2xl font-bold text-white mb-4">
-            🚀 Benvenuto in LINKTOP Health Monitor
+        <div className="bg-white/5 backdrop-blur-xl rounded-xl lg:rounded-2xl p-4 sm:p-6 lg:p-8 border border-white/10">
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-3 lg:mb-4">
+            Benvenuto in LINKTOP Health Monitor
           </h2>
-          <p className="text-gray-300 mb-4">
+          <p className="text-gray-300 text-sm sm:text-base mb-4">
             Sistema di monitoraggio integrato per dispositivi medici LINKTOP.
             Gestisci pazienti, esegui misurazioni e monitora lo stato di salute in tempo reale.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4">
             <FeatureCard
               title="6-in-1 Health Monitor"
               features={['SpO2', 'Heart Rate', 'Blood Pressure', 'Temperature', 'ECG', 'Step Counter']}
@@ -184,25 +184,25 @@ function QuickActionCard({
   return (
     <a
       href={href}
-      className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 hover:border-emerald-500/50 transition-all group"
+      className="bg-white/5 backdrop-blur-xl rounded-xl lg:rounded-2xl p-4 sm:p-5 lg:p-6 border border-white/10 hover:border-emerald-500/50 transition-all group min-h-[100px]"
     >
-      <div className={`w-12 h-12 bg-gradient-to-r ${color} rounded-xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
+      <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r ${color} rounded-lg lg:rounded-xl flex items-center justify-center text-white mb-3 lg:mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
         {icon}
       </div>
-      <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
-      <p className="text-gray-400 text-sm">{description}</p>
+      <h3 className="text-base sm:text-lg lg:text-xl font-bold text-white mb-1 sm:mb-2">{title}</h3>
+      <p className="text-gray-400 text-xs sm:text-sm">{description}</p>
     </a>
   )
 }
 
 function FeatureCard({ title, features }: { title: string; features: string[] }) {
   return (
-    <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-      <h3 className="text-white font-semibold mb-3">{title}</h3>
-      <ul className="space-y-2">
+    <div className="bg-white/5 rounded-lg lg:rounded-xl p-3 lg:p-4 border border-white/10">
+      <h3 className="text-white font-semibold mb-2 lg:mb-3 text-sm sm:text-base">{title}</h3>
+      <ul className="space-y-1.5 lg:space-y-2">
         {features.map((feature, index) => (
-          <li key={index} className="text-gray-400 text-sm flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+          <li key={index} className="text-gray-400 text-xs sm:text-sm flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full flex-shrink-0"></span>
             {feature}
           </li>
         ))}

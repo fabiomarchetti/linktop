@@ -338,26 +338,26 @@ export default function PazientiPage() {
 
       <Sidebar />
 
-      <main className="ml-64 transition-all duration-300">
-        <header className="relative z-10 bg-white/5 backdrop-blur-lg border-b border-white/10 px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="p-2 hover:bg-white/10 rounded-lg transition-all">
-                <ArrowLeft className="w-6 h-6 text-white" />
+      <main className="pt-16 lg:pt-0 lg:ml-64 transition-all duration-300">
+        <header className="relative z-10 bg-white/5 backdrop-blur-lg border-b border-white/10 px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex items-start gap-3 lg:gap-4">
+              <Link href="/dashboard" className="p-2 hover:bg-white/10 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0">
+                <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
               </Link>
-              <div>
-                <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                  <Users className="w-8 h-8" />
-                  Gestione Pazienti
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white flex items-center gap-2 lg:gap-3">
+                  <Users className="w-6 h-6 lg:w-8 lg:h-8 flex-shrink-0" />
+                  <span className="truncate">Gestione Pazienti</span>
                 </h1>
-                <p className="text-gray-300 mt-1">{pazienti.length} pazienti registrati</p>
+                <p className="text-gray-300 text-sm lg:text-base mt-1">{pazienti.length} pazienti registrati</p>
 
                 {/* Dropdown Selezione Paziente */}
                 <div className="mt-3">
                   <select
                     value={selectedPazienteId || ''}
                     onChange={(e) => setSelectedPazienteId(e.target.value ? Number(e.target.value) : null)}
-                    className="w-80 px-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+                    className="w-full sm:w-80 px-3 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-emerald-500 cursor-pointer text-sm sm:text-base min-h-[44px]"
                   >
                     <option value="" className="bg-slate-900">Seleziona un paziente...</option>
                     {pazienti.map((p) => (
@@ -370,117 +370,120 @@ export default function PazientiPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="relative">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <div className="relative flex-1 sm:flex-none">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Cerca pazienti..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500"
+                  className="w-full sm:w-auto pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500 min-h-[44px] text-sm sm:text-base"
                 />
               </div>
 
               <button
                 onClick={fetchPazienti}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all"
+                className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 <RefreshCw className={`w-5 h-5 text-white ${loading ? 'animate-spin' : ''}`} />
               </button>
 
               <button
                 onClick={handleCreate}
-                className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold flex items-center gap-2 hover:opacity-90 transition-all shadow-lg"
+                className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold flex items-center gap-2 hover:opacity-90 transition-all shadow-lg min-h-[44px] text-sm sm:text-base"
               >
-                <UserPlus className="w-4 h-4" />
-                Nuovo Paziente
+                <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">Nuovo Paziente</span>
+                <span className="sm:hidden">Nuovo</span>
               </button>
             </div>
           </div>
         </header>
 
-        <div className="relative z-10 p-8">
+        <div className="relative z-10 p-4 sm:p-6 lg:p-8">
           {/* Message */}
           {message && (
-            <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
+            <div className={`mb-4 lg:mb-6 p-3 lg:p-4 rounded-xl flex items-center gap-3 text-sm sm:text-base ${
               message.type === 'success'
                 ? 'bg-green-500/20 border border-green-500/30 text-green-300'
                 : 'bg-red-500/20 border border-red-500/30 text-red-300'
             }`}>
-              {message.type === 'success' ? <Check className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
-              {message.text}
+              {message.type === 'success' ? <Check className="w-5 h-5 flex-shrink-0" /> : <AlertTriangle className="w-5 h-5 flex-shrink-0" />}
+              <span className="line-clamp-2">{message.text}</span>
             </div>
           )}
 
-          {/* Tab Navigation */}
-          <div className="mb-6 flex gap-2 bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-2">
-            <button
-              onClick={() => setActiveTab('lista')}
-              className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'lista'
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
-                  : 'text-gray-300 hover:bg-white/10'
-              }`}
-            >
-              <Users className="w-4 h-4" />
-              Lista Pazienti
-            </button>
-            <button
-              onClick={() => setActiveTab('spo2')}
-              className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'spo2'
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
-                  : 'text-gray-300 hover:bg-white/10'
-              }`}
-            >
-              <Droplet className="w-4 h-4" />
-              Saturazione O2
-            </button>
-            <button
-              onClick={() => setActiveTab('heartrate')}
-              className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'heartrate'
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
-                  : 'text-gray-300 hover:bg-white/10'
-              }`}
-            >
-              <Heart className="w-4 h-4" />
-              Battito Cardiaco
-            </button>
-            <button
-              onClick={() => setActiveTab('temperature')}
-              className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'temperature'
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
-                  : 'text-gray-300 hover:bg-white/10'
-              }`}
-            >
-              <Thermometer className="w-4 h-4" />
-              Temperature
-            </button>
-            <button
-              onClick={() => setActiveTab('pressure')}
-              className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'pressure'
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
-                  : 'text-gray-300 hover:bg-white/10'
-              }`}
-            >
-              <Activity className="w-4 h-4" />
-              Pressione
-            </button>
-            <button
-              onClick={() => setActiveTab('ecg')}
-              className={`flex-1 px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'ecg'
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
-                  : 'text-gray-300 hover:bg-white/10'
-              }`}
-            >
-              <Activity className="w-4 h-4" />
-              ECG
-            </button>
+          {/* Tab Navigation - Scrollabile su mobile */}
+          <div className="mb-4 lg:mb-6 bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-1.5 sm:p-2 overflow-x-auto">
+            <div className="flex gap-1 sm:gap-2 min-w-max lg:min-w-0">
+              <button
+                onClick={() => setActiveTab('lista')}
+                className={`flex-shrink-0 lg:flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] text-sm sm:text-base ${
+                  activeTab === 'lista'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:bg-white/10'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                <span className="whitespace-nowrap">Lista</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('spo2')}
+                className={`flex-shrink-0 lg:flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] text-sm sm:text-base ${
+                  activeTab === 'spo2'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:bg-white/10'
+                }`}
+              >
+                <Droplet className="w-4 h-4" />
+                <span className="whitespace-nowrap">SpO2</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('heartrate')}
+                className={`flex-shrink-0 lg:flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] text-sm sm:text-base ${
+                  activeTab === 'heartrate'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:bg-white/10'
+                }`}
+              >
+                <Heart className="w-4 h-4" />
+                <span className="whitespace-nowrap">Battito</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('temperature')}
+                className={`flex-shrink-0 lg:flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] text-sm sm:text-base ${
+                  activeTab === 'temperature'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:bg-white/10'
+                }`}
+              >
+                <Thermometer className="w-4 h-4" />
+                <span className="whitespace-nowrap">Temp.</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('pressure')}
+                className={`flex-shrink-0 lg:flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] text-sm sm:text-base ${
+                  activeTab === 'pressure'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:bg-white/10'
+                }`}
+              >
+                <Activity className="w-4 h-4" />
+                <span className="whitespace-nowrap">Pressione</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('ecg')}
+                className={`flex-shrink-0 lg:flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] text-sm sm:text-base ${
+                  activeTab === 'ecg'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:bg-white/10'
+                }`}
+              >
+                <Activity className="w-4 h-4" />
+                <span className="whitespace-nowrap">ECG</span>
+              </button>
+            </div>
           </div>
 
           {/* Tab Content - Lista Pazienti */}
@@ -498,7 +501,7 @@ export default function PazientiPage() {
               <p className="text-white text-lg">Nessun paziente trovato</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
               {filteredPazienti.map((paziente) => (
                 <div
                   key={paziente.id}
@@ -1276,29 +1279,29 @@ export default function PazientiPage() {
 
         {/* Edit/Create Modal */}
         {(editingPaziente || isCreating) && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-slate-900/95 backdrop-blur-xl border border-emerald-500/20 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl">
-              <div className="sticky top-0 bg-slate-900 border-b border-emerald-500/20 p-6 z-10">
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                  {isCreating ? <UserPlus className="w-6 h-6 text-emerald-400" /> : <Edit2 className="w-6 h-6 text-emerald-400" />}
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 sm:p-4">
+            <div className="bg-slate-900/95 backdrop-blur-xl border border-emerald-500/20 rounded-xl sm:rounded-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl">
+              <div className="sticky top-0 bg-slate-900 border-b border-emerald-500/20 p-4 sm:p-6 z-10">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white flex items-center gap-2">
+                  {isCreating ? <UserPlus className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" /> : <Edit2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" />}
                   {isCreating ? 'Nuovo Paziente' : 'Modifica Paziente'}
                 </h2>
               </div>
 
-              <div className="p-6 space-y-6">
+              <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
                 {/* Dati Anagrafici */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-bold text-emerald-400 border-b border-emerald-500/30 pb-2">
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="text-base sm:text-lg font-bold text-emerald-400 border-b border-emerald-500/30 pb-2">
                     Dati Anagrafici
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <label className="block text-gray-400 text-sm mb-1">Nome *</label>
                       <input
                         type="text"
                         value={formData.nome}
                         onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500 min-h-[44px] text-base"
                         required
                       />
                     </div>
@@ -1308,7 +1311,7 @@ export default function PazientiPage() {
                         type="text"
                         value={formData.cognome}
                         onChange={(e) => setFormData({ ...formData, cognome: e.target.value })}
-                        className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500 min-h-[44px] text-base"
                         required
                       />
                     </div>
@@ -1598,20 +1601,20 @@ export default function PazientiPage() {
               </div>
 
               {/* Modal Footer */}
-              <div className="sticky bottom-0 bg-slate-900 border-t border-emerald-500/20 p-6 flex justify-end gap-3">
+              <div className="sticky bottom-0 bg-slate-900 border-t border-emerald-500/20 p-4 sm:p-6 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
                 <button
                   onClick={() => {
                     setEditingPaziente(null)
                     setIsCreating(false)
                   }}
-                  className="px-6 py-2 bg-gray-500/20 text-gray-300 rounded-lg hover:bg-gray-500/30 transition-all"
+                  className="w-full sm:w-auto px-6 py-3 sm:py-2 bg-gray-500/20 text-gray-300 rounded-lg hover:bg-gray-500/30 transition-all min-h-[48px] text-base font-medium order-2 sm:order-1"
                 >
                   Annulla
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg font-semibold hover:opacity-90 transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg"
+                  className="w-full sm:w-auto px-6 py-3 sm:py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg font-semibold hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg min-h-[48px] text-base order-1 sm:order-2"
                 >
                   {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                   {isCreating ? 'Crea Paziente' : 'Salva Modifiche'}

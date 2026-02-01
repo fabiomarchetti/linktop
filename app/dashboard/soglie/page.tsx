@@ -445,15 +445,15 @@ export default function SogliePage() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
-      <main className="flex-1 lg:ml-64">
+      <main className="flex-1 pt-16 lg:pt-0 lg:ml-64">
         <div className="p-4 sm:p-6 lg:p-8">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Settings className="w-7 h-7 text-teal-600" />
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Settings className="w-6 h-6 lg:w-7 lg:h-7 text-teal-600" />
               Configurazione Soglie Alert
             </h1>
-            <p className="text-gray-500 mt-1">
+            <p className="text-gray-500 mt-1 text-sm sm:text-base">
               Definisci i valori di attenzione e critici per ogni parametro vitale
             </p>
           </div>
@@ -488,7 +488,7 @@ export default function SogliePage() {
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
             {/* Colonna Soglie Globali */}
             <div>
               <div className="flex items-center gap-2 mb-4">

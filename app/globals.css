@@ -2,6 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+   RESPONSIVE & TOUCH OPTIMIZATION
+   Target: Smartphone, Tablet 8", Tablet 10-11"
+   ============================================ */
+
+@layer base {
+  /* Migliora la leggibilità su dispositivi mobili */
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Font size base responsive per utenti anziani (RSA) */
+  body {
+    @apply text-base;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+  }
+
+  /* Nasconde scrollbar su pagine fullscreen */
+  html:has(.h-screen),
+  body:has(.h-screen) {
+    overflow: hidden;
+  }
+
+  /* Migliora touch target su mobile */
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"],
+  [role="button"] {
+    touch-action: manipulation;
+  }
+
+  /* Previeni zoom su input focus su iOS */
+  @media (max-width: 768px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="url"],
+    input[type="search"],
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+}
+
 /* Custom animations for login background */
 @layer utilities {
   .animation-delay-2000 {
@@ -10,6 +61,51 @@
 
   .animation-delay-4000 {
     animation-delay: 4s;
+  }
+
+  /* Safe area per dispositivi con notch */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Touch target minimo 44px come da Apple HIG */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Scrollbar stilizzata per tablet */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  /* Hide scrollbar ma mantieni scroll - utile per tab navigation */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
 
@@ -26,6 +122,43 @@
   }
   100% {
     transform: translate(0px, 0px) scale(1);
+  }
+}
+
+/* ============================================
+   TABLET-SPECIFIC STYLES (768px - 1024px)
+   ============================================ */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Su tablet, aumenta leggermente la spaziatura touch */
+  .touch-optimize {
+    @apply gap-3;
+  }
+}
+
+/* ============================================
+   TABLET 8" PORTRAIT MODE (~800px width)
+   ============================================ */
+
+@media (min-width: 768px) and (max-width: 850px) {
+  /* Ottimizzazioni specifiche per tablet 8 pollici */
+  body {
+    @apply text-base;
+  }
+}
+
+/* ============================================
+   PRINT STYLES (per report/documenti)
+   ============================================ */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
   }
 }
 

@@ -169,25 +169,25 @@ export default function LogsPage() {
 
       <Sidebar />
 
-      <main className="ml-64 transition-all duration-300">
-        <header className="relative z-10 bg-white/5 backdrop-blur-lg border-b border-white/10 px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="p-2 hover:bg-white/10 rounded-lg transition-all">
-                <ArrowLeft className="w-6 h-6 text-white" />
+      <main className="pt-16 lg:pt-0 lg:ml-64 transition-all duration-300">
+        <header className="relative z-10 bg-white/5 backdrop-blur-lg border-b border-white/10 px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3 lg:gap-4">
+              <Link href="/dashboard" className="p-2 hover:bg-white/10 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center">
+                <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
               </Link>
               <div>
-                <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                  <ScrollText className="w-8 h-8" />
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white flex items-center gap-2 lg:gap-3">
+                  <ScrollText className="w-6 h-6 lg:w-8 lg:h-8" />
                   Logs Accessi
                 </h1>
-                <p className="text-gray-300 mt-1">Tracciamento accessi e navigazione utenti</p>
+                <p className="text-gray-300 text-sm lg:text-base mt-1">Tracciamento accessi e navigazione utenti</p>
               </div>
             </div>
             <button
               onClick={() => fetchLogs()}
               disabled={loading}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all flex items-center gap-2 disabled:opacity-50"
+              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 min-h-[44px] text-sm sm:text-base"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               Aggiorna
@@ -195,14 +195,14 @@ export default function LogsPage() {
           </div>
         </header>
 
-        <div className="relative z-10 p-8 space-y-6">
+        <div className="relative z-10 p-4 sm:p-6 lg:p-8 space-y-4 lg:space-y-6">
           {/* Filtri */}
-          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-6">
-            <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
+          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl lg:rounded-2xl p-4 lg:p-6">
+            <h2 className="text-white font-semibold mb-3 lg:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <Filter className="w-5 h-5" />
               Filtri
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
               {/* Filtro Utente */}
               <div>
                 <label className="text-gray-300 text-sm mb-2 block flex items-center gap-2">
@@ -265,7 +265,7 @@ export default function LogsPage() {
           </div>
 
           {/* Statistiche rapide */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
             <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center">
@@ -322,7 +322,7 @@ export default function LogsPage() {
           </div>
 
           {/* Tabella Logs */}
-          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl overflow-hidden">
+          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl lg:rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
               {loading ? (
                 <div className="p-12 text-center">

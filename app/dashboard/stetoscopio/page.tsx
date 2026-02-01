@@ -384,26 +384,26 @@ export default function StetoscopioPage() {
 
       <Sidebar />
 
-      <main className="ml-64 transition-all duration-300">
-        <header className="relative z-10 bg-white/5 backdrop-blur-lg border-b border-white/10 px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="p-2 hover:bg-white/10 rounded-lg transition-all">
-                <ArrowLeft className="w-6 h-6 text-white" />
+      <main className="pt-16 lg:pt-0 lg:ml-64 transition-all duration-300">
+        <header className="relative z-10 bg-white/5 backdrop-blur-lg border-b border-white/10 px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3 lg:gap-4">
+              <Link href="/dashboard" className="p-2 hover:bg-white/10 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center">
+                <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
               </Link>
               <div>
-                <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                  <Stethoscope className="w-8 h-8" />
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white flex items-center gap-2 lg:gap-3">
+                  <Stethoscope className="w-6 h-6 lg:w-8 lg:h-8" />
                   Stetoscopio Digitale
                 </h1>
-                <p className="text-gray-300 mt-1">Registrazione auscultazioni cardiache e polmonari</p>
+                <p className="text-gray-300 text-sm lg:text-base mt-1">Registrazione auscultazioni</p>
               </div>
             </div>
 
             {device.isConnected ? (
               <button
                 onClick={handleDisconnect}
-                className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-xl font-semibold transition-all border border-red-500/30"
+                className="px-4 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-xl font-semibold transition-all border border-red-500/30 min-h-[44px] text-sm sm:text-base"
               >
                 Disconnetti
               </button>
@@ -411,7 +411,7 @@ export default function StetoscopioPage() {
               <button
                 onClick={handleConnectDevice}
                 disabled={connectionStatus === 'connecting'}
-                className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold flex items-center gap-2 hover:opacity-90 transition-all shadow-lg disabled:opacity-50"
+                className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold flex items-center gap-2 hover:opacity-90 transition-all shadow-lg disabled:opacity-50 min-h-[44px] text-sm sm:text-base"
               >
                 {connectionStatus === 'connecting' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Stethoscope className="w-4 h-4" />}
                 {connectionStatus === 'connecting' ? 'Connessione...' : 'Connetti Stetoscopio'}
@@ -420,7 +420,7 @@ export default function StetoscopioPage() {
           </div>
         </header>
 
-        <div className="relative z-10 p-8">
+        <div className="relative z-10 p-4 sm:p-6 lg:p-8">
           {/* Status Message */}
           <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
             errorMessage

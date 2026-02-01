@@ -178,53 +178,54 @@ export default function UsersPage() {
 
       <Sidebar />
 
-      <main className="ml-64 transition-all duration-300">
-        <header className="relative z-10 bg-white/5 backdrop-blur-lg border-b border-white/10 px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="p-2 hover:bg-white/10 rounded-lg transition-all">
-                <ArrowLeft className="w-6 h-6 text-white" />
+      <main className="pt-16 lg:pt-0 lg:ml-64 transition-all duration-300">
+        <header className="relative z-10 bg-white/5 backdrop-blur-lg border-b border-white/10 px-4 sm:px-6 lg:px-8 py-4 lg:py-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex items-center gap-3 lg:gap-4">
+              <Link href="/dashboard" className="p-2 hover:bg-white/10 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center">
+                <ArrowLeft className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
               </Link>
               <div>
-                <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                  <Users className="w-8 h-8" />
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white flex items-center gap-2 lg:gap-3">
+                  <Users className="w-6 h-6 lg:w-8 lg:h-8" />
                   Gestione Staff
                 </h1>
-                <p className="text-gray-300 mt-1">{users.length} operatori registrati</p>
+                <p className="text-gray-300 text-sm lg:text-base mt-1">{users.length} operatori registrati</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="relative">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <div className="relative flex-1 sm:flex-none">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Cerca operatori..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500"
+                  className="w-full sm:w-auto pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500 min-h-[44px] text-sm sm:text-base"
                 />
               </div>
 
               <button
                 onClick={fetchUsers}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all"
+                className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 <RefreshCw className={`w-5 h-5 text-white ${loading ? 'animate-spin' : ''}`} />
               </button>
 
               <Link
                 href="/register"
-                className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold flex items-center gap-2 hover:opacity-90 transition-all shadow-lg"
+                className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold flex items-center gap-2 hover:opacity-90 transition-all shadow-lg min-h-[44px] text-sm sm:text-base"
               >
-                <UserPlus className="w-4 h-4" />
-                Nuovo Operatore
+                <UserPlus className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">Nuovo Operatore</span>
+                <span className="sm:hidden">Nuovo</span>
               </Link>
             </div>
           </div>
         </header>
 
-        <div className="relative z-10 p-8">
+        <div className="relative z-10 p-4 sm:p-6 lg:p-8">
           {/* Message */}
           {message && (
             <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
@@ -237,18 +238,19 @@ export default function UsersPage() {
             </div>
           )}
 
-          {/* Users Table */}
-          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-            <table className="w-full">
+          {/* Users Table - Responsive con scroll orizzontale */}
+          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl lg:rounded-2xl overflow-hidden shadow-2xl">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[800px]">
               <thead className="bg-white/5">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Operatore</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Username</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Email</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Ruolo</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Stato</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">Registrato</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">Azioni</th>
+                  <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-300">Operatore</th>
+                  <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-300">Username</th>
+                  <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-300 hidden md:table-cell">Email</th>
+                  <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-300">Ruolo</th>
+                  <th className="px-4 lg:px-6 py-3 lg:py-4 text-center text-xs sm:text-sm font-semibold text-gray-300">Stato</th>
+                  <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs sm:text-sm font-semibold text-gray-300 hidden lg:table-cell">Registrato</th>
+                  <th className="px-4 lg:px-6 py-3 lg:py-4 text-center text-xs sm:text-sm font-semibold text-gray-300">Azioni</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -352,13 +354,14 @@ export default function UsersPage() {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
 
         {/* Edit Modal */}
         {editingUser && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-slate-900/95 backdrop-blur-xl border border-emerald-500/20 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 sm:p-4">
+            <div className="bg-slate-900/95 backdrop-blur-xl border border-emerald-500/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 w-full max-w-md mx-2 sm:mx-4 shadow-2xl max-h-[95vh] overflow-y-auto">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                 <Edit2 className="w-5 h-5 text-emerald-400" />
                 Modifica Operatore

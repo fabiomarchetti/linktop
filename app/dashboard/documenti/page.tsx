@@ -250,11 +250,11 @@ export default function DocumentiPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <Sidebar />
 
-      <main className="ml-64 p-8 transition-all duration-300">
+      <main className="pt-16 lg:pt-0 lg:ml-64 p-4 sm:p-6 lg:p-8 transition-all duration-300">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Documenti</h1>
-          <p className="text-gray-400">
+        <div className="mb-6 lg:mb-8">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">Documenti</h1>
+          <p className="text-gray-400 text-sm sm:text-base">
             Archivio documenti e guide utili per l'utilizzo del sistema.
           </p>
         </div>
@@ -274,18 +274,18 @@ export default function DocumentiPage() {
         )}
 
         {/* Paziente Selector */}
-        <div className="mb-8">
-          <label className="block text-gray-400 mb-2 font-medium">
+        <div className="mb-6 lg:mb-8">
+          <label className="block text-gray-400 mb-2 font-medium text-sm sm:text-base">
             Seleziona Paziente
           </label>
-          <div className="relative max-w-xl">
+          <div className="relative w-full lg:max-w-xl">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <User className="h-5 w-5 text-gray-500" />
             </div>
             <select
               value={selectedPaziente}
               onChange={(e) => setSelectedPaziente(e.target.value)}
-              className="block w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all appearance-none"
+              className="block w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all appearance-none min-h-[48px] text-sm sm:text-base"
               disabled={loadingPazienti}
             >
               <option value="" className="bg-slate-800 text-gray-400">
@@ -322,18 +322,18 @@ export default function DocumentiPage() {
         </div>
 
         {/* Documents List */}
-        <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden">
+        <div className="bg-white/5 backdrop-blur-xl rounded-xl lg:rounded-2xl border border-white/10 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-left min-w-[600px]">
               <thead>
                 <tr className="border-b border-white/10 bg-white/5">
-                  <th className="p-4 text-gray-400 font-medium">
+                  <th className="p-3 lg:p-4 text-gray-400 font-medium text-xs sm:text-sm">
                     Nome Documento
                   </th>
-                  <th className="p-4 text-gray-400 font-medium">Tipo</th>
-                  <th className="p-4 text-gray-400 font-medium">Data</th>
-                  <th className="p-4 text-gray-400 font-medium">Dimensione</th>
-                  <th className="p-4 text-gray-400 font-medium text-right">
+                  <th className="p-3 lg:p-4 text-gray-400 font-medium text-xs sm:text-sm hidden sm:table-cell">Tipo</th>
+                  <th className="p-3 lg:p-4 text-gray-400 font-medium text-xs sm:text-sm hidden md:table-cell">Data</th>
+                  <th className="p-3 lg:p-4 text-gray-400 font-medium text-xs sm:text-sm hidden lg:table-cell">Dimensione</th>
+                  <th className="p-3 lg:p-4 text-gray-400 font-medium text-right text-xs sm:text-sm">
                     Azioni
                   </th>
                 </tr>
