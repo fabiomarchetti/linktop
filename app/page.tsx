@@ -1,12 +1,37 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Heart, Stethoscope, UserCircle } from 'lucide-react'
+import { Heart, Stethoscope, UserCircle, Maximize2, Minimize2 } from 'lucide-react'
 
 export default function HomePage() {
   const router = useRouter()
   const [isChecking, setIsChecking] = useState(true)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  // Gestione fullscreen
+  const toggleFullscreen = useCallback(async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen()
+        setIsFullscreen(true)
+      } else {
+        await document.exitFullscreen()
+        setIsFullscreen(false)
+      }
+    } catch (err) {
+      console.error('Fullscreen error:', err)
+    }
+  }, [])
+
+  // Listener per cambio stato fullscreen (es. ESC)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
 
   useEffect(() => {
     // Verifica se ci sono sessioni attive
@@ -61,7 +86,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-teal-600 via-emerald-700 to-green-800 flex items-center justify-center p-3 sm:p-4 relative overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div className="h-screen bg-gradient-to-br from-teal-600 via-emerald-700 to-green-800 flex items-center justify-center p-2 sm:p-3 relative overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       {/* Background Animation */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -inset-[10px] opacity-30">
@@ -71,48 +96,58 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Fullscreen Button */}
+      <button
+        onClick={toggleFullscreen}
+        className="absolute top-2 right-2 z-20 p-1.5 sm:p-2 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-full transition-all border border-white/30"
+        title={isFullscreen ? 'Esci da schermo intero' : 'Schermo intero'}
+      >
+        {isFullscreen ? (
+          <Minimize2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+        ) : (
+          <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+        )}
+      </button>
+
       {/* Main Content */}
-      <div className="relative z-10 w-full max-w-5xl flex flex-col h-full max-h-[95vh] justify-center">
-        {/* Header - Compatto */}
-        <div className="text-center mb-4 sm:mb-6 lg:mb-8">
-          <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-white/20 backdrop-blur-lg rounded-full flex items-center justify-center mb-2 sm:mb-3 shadow-2xl border-2 sm:border-4 border-white/30">
-            <Heart className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white" />
+      <div className="relative z-10 w-full max-w-5xl flex flex-col h-full max-h-[88vh] justify-center">
+        {/* Header - Ultra Compatto per 600x960 */}
+        <div className="text-center mb-1 sm:mb-3 lg:mb-5">
+          <div className="mx-auto w-8 h-8 sm:w-10 sm:h-10 lg:w-14 lg:h-14 bg-white/20 backdrop-blur-lg rounded-full flex items-center justify-center mb-1 shadow-2xl border border-white/30">
+            <Heart className="w-4 h-4 sm:w-5 sm:h-5 lg:w-7 lg:h-7 text-white" />
           </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-1 drop-shadow-2xl">
-            LINKTOP
+          <h1 className="text-xl sm:text-2xl lg:text-4xl font-black text-white drop-shadow-2xl">
+            Monitoraggio Salute
           </h1>
-          <p className="text-base sm:text-lg lg:text-xl text-teal-100 font-semibold">
-            Health Monitor System
-          </p>
         </div>
 
-        {/* Choice Cards - Sempre 2 colonne su tablet */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6 max-w-4xl mx-auto w-full">
+        {/* Choice Cards - Sempre 2 colonne, ottimizzato per 600x960 */}
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4 max-w-xl sm:max-w-2xl lg:max-w-3xl mx-auto w-full px-1">
           {/* Card Paziente */}
           <button
             onClick={() => router.push('/utente')}
-            className="group bg-white/10 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl border-2 sm:border-4 border-white/20 hover:border-white/40 transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-emerald-500/50 focus:outline-none focus:ring-4 focus:ring-white/50"
+            className="group bg-white/10 backdrop-blur-xl rounded-lg sm:rounded-xl p-2.5 sm:p-3 lg:p-5 shadow-2xl border border-white/20 hover:border-white/40 transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-white/50"
           >
-            <div className="flex flex-col items-center gap-3 sm:gap-4">
+            <div className="flex flex-col items-center gap-1.5 sm:gap-2 lg:gap-3">
               {/* Icon */}
-              <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:shadow-emerald-400/50 transition-all">
-                <UserCircle className="w-9 h-9 sm:w-11 sm:h-11 lg:w-14 lg:h-14 text-white" />
+              <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-18 lg:h-18 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:shadow-emerald-400/50 transition-all">
+                <UserCircle className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white" />
               </div>
 
               {/* Title */}
               <div className="text-center">
-                <h2 className="text-lg sm:text-xl lg:text-2xl font-black text-white mb-1">
-                  Sono un Paziente
+                <h2 className="text-sm sm:text-base lg:text-lg font-black text-white">
+                  Paziente
                 </h2>
-                <p className="text-xs sm:text-sm lg:text-base text-teal-100 font-medium">
-                  Accedi con il tuo Codice Fiscale
+                <p className="text-[9px] sm:text-[10px] lg:text-xs text-teal-100 font-medium">
+                  Codice Fiscale
                 </p>
               </div>
 
               {/* Arrow */}
-              <div className="flex items-center gap-2 text-white font-bold text-base sm:text-lg group-hover:gap-3 transition-all">
+              <div className="flex items-center gap-1 text-white font-bold text-xs sm:text-sm group-hover:gap-1.5 transition-all">
                 <span>Accedi</span>
-                <span className="text-lg sm:text-xl">→</span>
+                <span className="text-sm sm:text-base">→</span>
               </div>
             </div>
           </button>
@@ -120,36 +155,36 @@ export default function HomePage() {
           {/* Card Staff */}
           <button
             onClick={() => router.push('/login')}
-            className="group bg-white/10 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl border-2 sm:border-4 border-white/20 hover:border-white/40 transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-cyan-500/50 focus:outline-none focus:ring-4 focus:ring-white/50"
+            className="group bg-white/10 backdrop-blur-xl rounded-lg sm:rounded-xl p-2.5 sm:p-3 lg:p-5 shadow-2xl border border-white/20 hover:border-white/40 transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-white/50"
           >
-            <div className="flex flex-col items-center gap-3 sm:gap-4">
+            <div className="flex flex-col items-center gap-1.5 sm:gap-2 lg:gap-3">
               {/* Icon */}
-              <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:shadow-cyan-400/50 transition-all">
-                <Stethoscope className="w-9 h-9 sm:w-11 sm:h-11 lg:w-14 lg:h-14 text-white" />
+              <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-18 lg:h-18 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:shadow-cyan-400/50 transition-all">
+                <Stethoscope className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white" />
               </div>
 
               {/* Title */}
               <div className="text-center">
-                <h2 className="text-lg sm:text-xl lg:text-2xl font-black text-white mb-1">
-                  Sono dello Staff
+                <h2 className="text-sm sm:text-base lg:text-lg font-black text-white">
+                  Staff
                 </h2>
-                <p className="text-xs sm:text-sm lg:text-base text-teal-100 font-medium">
-                  Personale sanitario autorizzato
+                <p className="text-[9px] sm:text-[10px] lg:text-xs text-teal-100 font-medium">
+                  Personale autorizzato
                 </p>
               </div>
 
               {/* Arrow */}
-              <div className="flex items-center gap-2 text-white font-bold text-base sm:text-lg group-hover:gap-3 transition-all">
+              <div className="flex items-center gap-1 text-white font-bold text-xs sm:text-sm group-hover:gap-1.5 transition-all">
                 <span>Accedi</span>
-                <span className="text-lg sm:text-xl">→</span>
+                <span className="text-sm sm:text-base">→</span>
               </div>
             </div>
           </button>
         </div>
 
         {/* Footer - Compatto */}
-        <div className="text-center mt-4 sm:mt-6 text-white/60 text-xs sm:text-sm">
-          <p>LINKTOP Health Monitor v1.0</p>
+        <div className="text-center mt-1.5 sm:mt-3 text-white/50 text-[9px] sm:text-[10px]">
+          <p>LINKTOP v1.0</p>
         </div>
       </div>
     </div>
