@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Heart, Stethoscope, Eye, LogOut, Mic, Volume2, Settings } from 'lucide-react'
+import { Heart, Stethoscope, Eye, LogOut, Mic, Volume2, Settings, Download } from 'lucide-react'
 
 interface Utente {
   id: number
@@ -18,6 +18,7 @@ export default function UtenteHomePage() {
   const [transcript, setTranscript] = useState('')
   const [destinationMessage, setDestinationMessage] = useState('')
   const [micPermissionGranted, setMicPermissionGranted] = useState(false)
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const recognitionRef = useRef<any>(null)
   const synthRef = useRef<any>(null)
 
@@ -80,6 +81,24 @@ export default function UtenteHomePage() {
       }
     }
   }, [router])
+
+  // PWA Install Prompt
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+
+    // Registra service worker per PWA
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+      navigator.serviceWorker.register('/sw.js').catch((err) => {
+        console.error('Service worker registration failed:', err)
+      })
+    }
+
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
 
   const speak = (text: string) => {
     if (synthRef.current) {
@@ -292,6 +311,15 @@ export default function UtenteHomePage() {
     speak('Non ho capito. Riprova dicendo: 1, 2, 3, o 4')
   }
 
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return
+    deferredPrompt.prompt()
+    const { outcome } = await deferredPrompt.userChoice
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null)
+    }
+  }
+
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('linktop_utente')
@@ -449,6 +477,19 @@ export default function UtenteHomePage() {
           <p className="text-white font-black text-4xl text-center flex items-center gap-3">
             → {destinationMessage}
           </p>
+        </div>
+      )}
+
+      {/* Install PWA Button */}
+      {deferredPrompt && (
+        <div className="absolute bottom-4 right-4 z-50">
+          <button
+            onClick={handleInstallClick}
+            className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-xl border-2 border-white shadow-2xl hover:shadow-emerald-500/50 transition-all hover:scale-105 font-bold"
+          >
+            <Download className="w-5 h-5" />
+            Installa App
+          </button>
         </div>
       )}
     </div>
