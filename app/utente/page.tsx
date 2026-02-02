@@ -253,6 +253,21 @@ export default function UtenteLoginPage() {
           <div className="mt-2 sm:mt-4 text-center text-white/80 text-[11px] sm:text-sm">
             <p>Non ricordi la password? Contatta il tuo operatore sanitario</p>
           </div>
+
+          {/* Link Staff */}
+          <div className="mt-3 sm:mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                // Rimuovi preferenza paziente per permettere accesso staff
+                localStorage.removeItem('linktop_device_type')
+                router.push('/login')
+              }}
+              className="text-white/60 hover:text-white text-xs sm:text-sm underline underline-offset-2 transition-colors"
+            >
+              Sei dello staff? Accedi qui
+            </button>
+          </div>
         </div>
 
         {/* Install PWA Hint */}

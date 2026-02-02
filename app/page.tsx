@@ -68,6 +68,22 @@ export default function HomePage() {
         }
       }
 
+      // === RILEVAMENTO DISPOSITIVO PAZIENTE (TCL T509K e simili) ===
+      const userAgent = navigator.userAgent
+      const isTCLDevice = userAgent.includes('TCL') || userAgent.includes('T509K')
+      const isPatientResolution =
+        (window.screen.width === 720 && window.screen.height === 1600) || // Portrait
+        (window.screen.width === 1600 && window.screen.height === 720)    // Landscape
+      const wasPatientDevice = localStorage.getItem('linktop_device_type') === 'patient'
+
+      // Se è un dispositivo paziente, redirect diretto a /utente
+      if (isTCLDevice || isPatientResolution || wasPatientDevice) {
+        // Salva la preferenza per visite future
+        localStorage.setItem('linktop_device_type', 'patient')
+        router.push('/utente')
+        return
+      }
+
       // Nessuna sessione attiva → mostra landing page
       setIsChecking(false)
     }
