@@ -56,12 +56,27 @@ export default function UtenteLoginPage() {
     }
   };
 
-  // Carica codice fiscale salvato
+  // Carica codice fiscale salvato + fullscreen automatico su smartphone
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const savedCF = sessionStorage.getItem("linktop_cf");
+      const savedCF = localStorage.getItem("linktop_cf");
       if (savedCF) {
         setCodiceFiscale(savedCF);
+      }
+
+      // Fullscreen automatico su smartphone (< 640px)
+      const isSmartphone = window.innerWidth < 640;
+      if (isSmartphone && !document.fullscreenElement) {
+        // Richiedi fullscreen dopo un breve ritardo per evitare blocchi del browser
+        const requestFullscreen = async () => {
+          try {
+            await document.documentElement.requestFullscreen();
+            setIsFullscreen(true);
+          } catch (err) {
+            // Alcuni browser richiedono interazione utente, ignora silenziosamente
+          }
+        };
+        requestFullscreen();
       }
 
       // Registra service worker per PWA
@@ -102,14 +117,14 @@ export default function UtenteLoginPage() {
       const data = await response.json();
 
       if (data.success && data.utente) {
-        // Salva dati utente in sessionStorage
-        sessionStorage.setItem("linktop_utente", JSON.stringify(data.utente));
+        // Salva dati utente in localStorage (persistente)
+        localStorage.setItem("linktop_utente", JSON.stringify(data.utente));
 
         // Salva CF se richiesto
         if (rememberCF) {
-          sessionStorage.setItem("linktop_cf", codiceFiscale.toUpperCase());
+          localStorage.setItem("linktop_cf", codiceFiscale.toUpperCase());
         } else {
-          sessionStorage.removeItem("linktop_cf");
+          localStorage.removeItem("linktop_cf");
         }
 
         // Vai alla pagina principale

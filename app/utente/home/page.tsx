@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Heart, Stethoscope, Eye, LogOut, Settings, Download } from 'lucide-react'
+import { Heart, Stethoscope, Eye, LogOut, Settings, Download, Maximize2, Minimize2 } from 'lucide-react'
 
 interface Utente {
   id: number
@@ -15,16 +15,55 @@ export default function UtenteHomePage() {
   const router = useRouter()
   const [utente, setUtente] = useState<Utente | null>(null)
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  // Gestione fullscreen
+  const toggleFullscreen = useCallback(async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen()
+        setIsFullscreen(true)
+      } else {
+        await document.exitFullscreen()
+        setIsFullscreen(false)
+      }
+    } catch (err) {
+      console.error('Fullscreen error:', err)
+    }
+  }, [])
+
+  // Listener per cambio stato fullscreen (es. ESC)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
 
   useEffect(() => {
-    // Verifica autenticazione
+    // Verifica autenticazione (ora in localStorage)
     if (typeof window !== 'undefined') {
-      const utenteData = sessionStorage.getItem('linktop_utente')
+      const utenteData = localStorage.getItem('linktop_utente')
       if (!utenteData) {
         router.push('/utente')
         return
       }
       setUtente(JSON.parse(utenteData))
+
+      // Fullscreen automatico su smartphone (< 640px)
+      const isSmartphone = window.innerWidth < 640
+      if (isSmartphone && !document.fullscreenElement) {
+        const requestFullscreen = async () => {
+          try {
+            await document.documentElement.requestFullscreen()
+            setIsFullscreen(true)
+          } catch (err) {
+            // Alcuni browser richiedono interazione utente
+          }
+        }
+        requestFullscreen()
+      }
     }
   }, [router])
 
@@ -57,7 +96,7 @@ export default function UtenteHomePage() {
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('linktop_utente')
+      localStorage.removeItem('linktop_utente')
       router.push('/utente')
     }
   }
@@ -88,14 +127,27 @@ export default function UtenteHomePage() {
           </button>
         </div>
 
-        {/* Logout Button */}
-        <button
-          onClick={handleLogout}
-          className="p-2.5 sm:p-3 bg-red-500/80 backdrop-blur-lg rounded-full shadow-lg hover:bg-red-600 transition-all"
-          title="Esci"
-        >
-          <LogOut className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-        </button>
+        {/* Fullscreen + Logout Buttons */}
+        <div className="flex gap-2 items-center">
+          <button
+            onClick={toggleFullscreen}
+            className="p-2.5 sm:p-3 bg-white/20 backdrop-blur-lg rounded-full shadow-lg hover:bg-white/30 transition-all"
+            title={isFullscreen ? 'Esci da schermo intero' : 'Schermo intero'}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            ) : (
+              <Maximize2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            )}
+          </button>
+          <button
+            onClick={handleLogout}
+            className="p-2.5 sm:p-3 bg-red-500/80 backdrop-blur-lg rounded-full shadow-lg hover:bg-red-600 transition-all"
+            title="Esci"
+          >
+            <LogOut className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          </button>
+        </div>
       </div>
 
       {/* Grid Layout - 2x2 ottimizzato per tutte le dimensioni */}

@@ -52,8 +52,8 @@ export default function HomePage() {
         }
       }
 
-      // Verifica sessione paziente
-      const utenteSession = sessionStorage.getItem('linktop_utente')
+      // Verifica sessione paziente (ora in localStorage)
+      const utenteSession = localStorage.getItem('linktop_utente')
       if (utenteSession) {
         try {
           const utenteData = JSON.parse(utenteSession)
@@ -64,11 +64,11 @@ export default function HomePage() {
           }
         } catch (e) {
           // Sessione corrotta, rimuovi
-          sessionStorage.removeItem('linktop_utente')
+          localStorage.removeItem('linktop_utente')
         }
       }
 
-      // === RILEVAMENTO DISPOSITIVO PAZIENTE (TCL T509K e simili) ===
+      // === RILEVAMENTO DISPOSITIVO PAZIENTE ===
       const userAgent = navigator.userAgent
       const isTCLDevice = userAgent.includes('TCL') || userAgent.includes('T509K')
       const isPatientResolution =
@@ -76,8 +76,12 @@ export default function HomePage() {
         (window.screen.width === 1600 && window.screen.height === 720)    // Landscape
       const wasPatientDevice = localStorage.getItem('linktop_device_type') === 'patient'
 
-      // Se è un dispositivo paziente, redirect diretto a /utente
-      if (isTCLDevice || isPatientResolution || wasPatientDevice) {
+      // === RILEVAMENTO SMARTPHONE (viewport < 640px) ===
+      // Smartphone = sicuramente paziente, redirect diretto a /utente
+      const isSmartphone = window.innerWidth < 640
+
+      // Se è un dispositivo paziente o smartphone, redirect diretto a /utente
+      if (isTCLDevice || isPatientResolution || wasPatientDevice || isSmartphone) {
         // Salva la preferenza per visite future
         localStorage.setItem('linktop_device_type', 'patient')
         router.push('/utente')

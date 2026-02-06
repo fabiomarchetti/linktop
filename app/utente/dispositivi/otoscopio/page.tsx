@@ -13,14 +13,28 @@ export default function UtenteOtoscopioPage() {
   const router = useRouter()
   const [utente, setUtente] = useState<Utente | null>(null)
 
+  // Load user data + fullscreen automatico su smartphone
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const utenteData = sessionStorage.getItem('linktop_utente')
+      const utenteData = localStorage.getItem('linktop_utente')
       if (!utenteData) {
         router.push('/utente')
         return
       }
       setUtente(JSON.parse(utenteData))
+
+      // Fullscreen automatico su smartphone (< 640px)
+      const isSmartphone = window.innerWidth < 640
+      if (isSmartphone && !document.fullscreenElement) {
+        const requestFullscreen = async () => {
+          try {
+            await document.documentElement.requestFullscreen()
+          } catch (err) {
+            // Alcuni browser richiedono interazione utente
+          }
+        }
+        requestFullscreen()
+      }
     }
   }, [router])
 
