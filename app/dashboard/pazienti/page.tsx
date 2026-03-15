@@ -294,11 +294,18 @@ export default function PazientiPage() {
     setTimeout(() => setMessage(null), 3000)
   }
 
-  const filteredPazienti = pazienti.filter(paz =>
-    paz.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    paz.cognome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (paz.codice_fiscale && paz.codice_fiscale.toLowerCase().includes(searchTerm.toLowerCase()))
-  )
+  const filteredPazienti = pazienti.filter(paz => {
+    // Filtra per dropdown paziente selezionato
+    if (selectedPazienteId && paz.id !== selectedPazienteId) return false
+    // Filtra per testo di ricerca
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      return paz.nome.toLowerCase().includes(term) ||
+        paz.cognome.toLowerCase().includes(term) ||
+        (paz.codice_fiscale && paz.codice_fiscale.toLowerCase().includes(term))
+    }
+    return true
+  })
 
   const calculateAge = (dataNascita: string | null): number | null => {
     if (!dataNascita) return null

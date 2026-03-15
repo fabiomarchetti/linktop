@@ -138,6 +138,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Per heart_rate, cerca tutti i record dove heart_rate IS NOT NULL
+    // (il battito viene salvato anche nelle misurazioni SpO2)
+    const columnFilter: Record<string, string> = {
+      heart_rate: 'hd.heart_rate IS NOT NULL',
+      spo2: 'hd.spo2 IS NOT NULL',
+      temperature: 'hd.temperature IS NOT NULL',
+      blood_pressure: 'hd.systolic_bp IS NOT NULL AND hd.diastolic_bp IS NOT NULL',
+    }
+
+    const whereClause = columnFilter[type] || `hd.measurement_type = $1`
+    const usesTypeParam = !columnFilter[type]
+
     let query = `
       SELECT
         hd.id,
@@ -154,11 +166,11 @@ export async function GET(request: NextRequest) {
         p.codice_fiscale
       FROM linktop_health_data hd
       JOIN linktop_pazienti p ON hd.paziente_id = p.id
-      WHERE hd.measurement_type = $1
+      WHERE ${whereClause}
     `
 
-    const params: any[] = [type]
-    let paramCount = 2
+    const params: any[] = usesTypeParam ? [type] : []
+    let paramCount = usesTypeParam ? 2 : 1
 
     if (paziente_id) {
       query += ` AND hd.paziente_id = $${paramCount}`
