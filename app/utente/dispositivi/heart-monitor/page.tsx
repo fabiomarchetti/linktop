@@ -104,8 +104,8 @@ export default function UtenteHeartMonitorPage() {
           systolic_bp: data.systolic_bp || null,
           diastolic_bp: data.diastolic_bp || null,
           temperature: data.temperature || null,
-          recorded_by: `paziente_${utente.id}`,
-          notes: 'Misurazione automatica da area paziente',
+          recorded_by: null,
+          notes: `Misurazione da area paziente (${utente.nome} ${utente.cognome})`,
         })
       })
 
