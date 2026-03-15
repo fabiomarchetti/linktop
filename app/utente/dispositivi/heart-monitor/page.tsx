@@ -70,9 +70,61 @@ export default function UtenteHeartMonitorPage() {
     sensibility: 0, baseline: 0, sampleCount: 0, baselineSum: 0
   })
 
+  // Stato salvataggio
+  const [saving, setSaving] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
+
   // Buffer per riassemblare pacchetti frammentati
   const packetBufferRef = useRef<Uint8Array>(new Uint8Array(0))
   const expectedPacketLengthRef = useRef<number>(0)
+
+  // Salva misurazione sul server
+  const saveHealthData = useCallback(async (data: {
+    measurement_type: string
+    heart_rate?: number
+    spo2?: number
+    systolic_bp?: number
+    diastolic_bp?: number
+    temperature?: number
+  }) => {
+    if (!utente) return
+
+    setSaving(true)
+    setSaveStatus('idle')
+
+    try {
+      const response = await fetch('/api/health-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paziente_id: utente.id,
+          measurement_type: data.measurement_type,
+          heart_rate: data.heart_rate || null,
+          spo2: data.spo2 || null,
+          systolic_bp: data.systolic_bp || null,
+          diastolic_bp: data.diastolic_bp || null,
+          temperature: data.temperature || null,
+          recorded_by: `paziente_${utente.id}`,
+          notes: 'Misurazione automatica da area paziente',
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        console.log('✅ Dati salvati sul server:', result.id)
+        setSaveStatus('success')
+      } else {
+        console.error('❌ Errore salvataggio:', result.error)
+        setSaveStatus('error')
+      }
+    } catch (err) {
+      console.error('❌ Errore connessione salvataggio:', err)
+      setSaveStatus('error')
+    } finally {
+      setSaving(false)
+    }
+  }, [utente])
 
   // Load calibration offsets from localStorage
   useEffect(() => {
@@ -319,10 +371,17 @@ export default function UtenteHeartMonitorPage() {
           return newMeasurements
         })
 
+        // Salva SpO2 + HR sul server
+        saveHealthData({
+          measurement_type: 'spo2',
+          spo2: finalSpo2,
+          heart_rate: finalHr,
+        })
+
         playBeep(1200, 300)
       }
     }, interval)
-  }, [updateMeasuringState, playBeep, calculateMedian])
+  }, [updateMeasuringState, playBeep, calculateMedian, saveHealthData])
 
   // Reset timer SpO2
   const resetSpo2Timer = useCallback(() => {
@@ -535,6 +594,16 @@ export default function UtenteHeartMonitorPage() {
             diastolic: result.diastolic
           }))
 
+          // Salva pressione sul server
+          if (result.systolic > 0 && result.diastolic > 0) {
+            saveHealthData({
+              measurement_type: 'blood_pressure',
+              systolic_bp: result.systolic,
+              diastolic_bp: result.diastolic,
+              heart_rate: result.hr > 0 ? result.hr : undefined,
+            })
+          }
+
           bpPressureArrayRef.current = []
           playBeep(1200, 300)
         }
@@ -571,10 +640,18 @@ export default function UtenteHeartMonitorPage() {
           console.log(`🌡️ Temperatura: raw=${rawTemp.toFixed(1)}°C + offset(${tempOffset > 0 ? '+' : ''}${tempOffset.toFixed(1)}°C) = ${finalTemp.toFixed(1)}°C`)
 
           if (finalTemp > 30 && finalTemp < 45) {
+            const tempValue = parseFloat(finalTemp.toFixed(1))
+
             setMeasurements(prev => ({
               ...prev,
-              temperature: parseFloat(finalTemp.toFixed(1))
+              temperature: tempValue
             }))
+
+            // Salva temperatura sul server
+            saveHealthData({
+              measurement_type: 'temperature',
+              temperature: tempValue,
+            })
 
             updateMeasuringState(false)
             playBeep(1200, 300)
@@ -585,7 +662,7 @@ export default function UtenteHeartMonitorPage() {
         }
       }
     }
-  }, [updateMeasuringState, playBeep, calculateVitals, calculateBP, startSpo2Timer])
+  }, [updateMeasuringState, playBeep, calculateVitals, calculateBP, startSpo2Timer, saveHealthData])
 
   const connectDevice = async () => {
     try {
@@ -1163,6 +1240,23 @@ export default function UtenteHeartMonitorPage() {
                   <p className="text-white/70 text-lg mb-2">Temperatura Corporea</p>
                   <p className="text-white text-6xl font-bold">{measurements.temperature}°</p>
                   <p className="text-white/70 text-lg mt-1">Celsius</p>
+                </div>
+              )}
+              {/* Stato salvataggio */}
+              {saving && (
+                <div className="bg-blue-500/20 backdrop-blur-xl rounded-2xl p-4 border-2 border-blue-400/30 flex items-center justify-center gap-3">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-white font-bold text-lg">Salvataggio in corso...</p>
+                </div>
+              )}
+              {saveStatus === 'success' && !saving && (
+                <div className="bg-green-500/20 backdrop-blur-xl rounded-2xl p-4 border-2 border-green-400/30 flex items-center justify-center gap-3">
+                  <p className="text-green-300 font-bold text-lg">Dati salvati correttamente</p>
+                </div>
+              )}
+              {saveStatus === 'error' && !saving && (
+                <div className="bg-red-500/20 backdrop-blur-xl rounded-2xl p-4 border-2 border-red-400/30 flex items-center justify-center gap-3">
+                  <p className="text-red-300 font-bold text-lg">Errore nel salvataggio</p>
                 </div>
               )}
             </div>
