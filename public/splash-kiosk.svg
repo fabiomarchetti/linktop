@@ -1,0 +1,31 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <rect width="1080" height="1080" fill="url(#bg)"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1080" y2="1080" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0f766e"/>
+      <stop offset="1" stop-color="#0d9488"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Cerchio bianco semitrasparente dietro al cuore -->
+  <circle cx="540" cy="420" r="220" fill="white" opacity="0.15"/>
+
+  <!-- Cuore grande centrato -->
+  <path d="M540 600L380 440C348 408 348 360 380 328C412 296 460 296 492 328L540 376L588 328C620 296 668 296 700 328C732 360 732 408 700 440L540 600Z" fill="white"/>
+
+  <!-- Linea ECG dentro il cuore -->
+  <path d="M420 500H480L504 460L540 540L576 460L600 500H660" stroke="white" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.5"/>
+
+  <!-- Testo "Monitoraggio Salute" -->
+  <text x="540" y="720" text-anchor="middle" fill="white" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" letter-spacing="2">Monitoraggio Salute</text>
+
+  <!-- Sottotitolo -->
+  <text x="540" y="780" text-anchor="middle" fill="white" font-family="Arial, Helvetica, sans-serif" font-size="32" opacity="0.7">Tocca per iniziare</text>
+
+  <!-- Linea decorativa sotto -->
+  <line x1="390" y1="830" x2="690" y2="830" stroke="white" stroke-width="2" opacity="0.3"/>
+
+  <!-- Logo LINKTOP piccolo in basso -->
+  <text x="540" y="900" text-anchor="middle" fill="white" font-family="Arial, Helvetica, sans-serif" font-size="24" opacity="0.4" letter-spacing="4">LINKTOP</text>
+</svg>
