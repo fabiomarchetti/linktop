@@ -580,7 +580,7 @@ function HealthCard({
   return (
     <button
       onClick={onClick}
-      className="bg-white rounded-xl shadow-md p-3 text-left hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400"
+      className="w-full bg-white rounded-xl shadow-md p-3 text-left hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400"
     >
       <div className="flex items-center gap-2 mb-2">
         <div className={`w-8 h-8 bg-gradient-to-br ${colors[color]} rounded-full flex items-center justify-center text-white`}>
