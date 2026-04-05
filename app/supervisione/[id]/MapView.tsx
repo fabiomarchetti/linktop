@@ -1,6 +1,6 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Circle, CircleMarker, Polyline, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect } from "react";
@@ -15,6 +15,7 @@ L.Icon.Default.mergeOptions({
 });
 
 interface Position {
+  id?: number;
   lat: number;
   lng: number;
   accuracy?: number;
@@ -85,8 +86,31 @@ export default function MapView({
 
       {/* Storico movimenti (polyline) */}
       {historyLine.length > 1 && (
-        <Polyline positions={historyLine} color="blue" weight={3} opacity={0.5} />
+        <Polyline positions={historyLine} color="blue" weight={3} opacity={0.6} dashArray="5,8" />
       )}
+
+      {/* Marker per ogni posizione storica (esclusa l'ultima che e' "current") */}
+      {history.slice(1).map((p, idx) => (
+        <CircleMarker
+          key={`hist-${p.id ?? idx}`}
+          center={[p.lat, p.lng]}
+          radius={4}
+          pathOptions={{ color: "#3b82f6", fillColor: "#3b82f6", fillOpacity: 0.7, weight: 1 }}
+        >
+          <Popup>
+            <div className="text-xs">
+              <strong>#{history.length - idx - 1}</strong>
+              {p.recorded_at && (
+                <>
+                  <br />
+                  {new Date(p.recorded_at).toLocaleString("it-IT")}
+                </>
+              )}
+              {p.accuracy && <><br />±{Math.round(p.accuracy)}m</>}
+            </div>
+          </Popup>
+        </CircleMarker>
+      ))}
 
       {/* Posizione corrente (marker verde) */}
       {currentPosition && (

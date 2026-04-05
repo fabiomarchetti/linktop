@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   MapPin, LogOut, Heart, Activity, Thermometer, Droplet,
-  RefreshCw, Loader2, Navigation, Circle as CircleIcon, Trash2, AlertCircle,
+  RefreshCw, Loader2, Navigation, Circle as CircleIcon, Trash2, AlertCircle, TrendingUp,
 } from "lucide-react";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false });
+import HealthChartModal from "./HealthChartModal";
+
+type MetricType = "spo2" | "heart_rate" | "temperature" | "blood_pressure";
 
 interface Paziente {
   id: number;
@@ -61,6 +64,9 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
   const [drawingMode, setDrawingMode] = useState(false);
   const [draftGeofence, setDraftGeofence] = useState<{ center: [number, number]; radius: number } | null>(null);
   const [geofenceName, setGeofenceName] = useState("");
+
+  // Modal grafico salute
+  const [chartMetric, setChartMetric] = useState<MetricType | null>(null);
 
   // Verifica sessione supervisione
   useEffect(() => {
@@ -250,7 +256,7 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
       </header>
 
       <main className="max-w-7xl mx-auto p-4 space-y-4">
-        {/* Parametri salute */}
+        {/* Parametri salute - cliccabili per grafico storico */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <HealthCard
             icon={<Droplet className="w-5 h-5" />}
@@ -258,6 +264,7 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
             value={paziente?.last_spo2 ? `${paziente.last_spo2}%` : "--"}
             time={paziente?.last_spo2_time}
             color="blue"
+            onClick={() => setChartMetric("spo2")}
           />
           <HealthCard
             icon={<Heart className="w-5 h-5" />}
@@ -266,6 +273,7 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
             unit="bpm"
             time={paziente?.last_heart_rate_time}
             color="red"
+            onClick={() => setChartMetric("heart_rate")}
           />
           <HealthCard
             icon={<Thermometer className="w-5 h-5" />}
@@ -273,6 +281,7 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
             value={paziente?.last_temperature ? `${paziente.last_temperature}°` : "--"}
             time={paziente?.last_temperature_time}
             color="orange"
+            onClick={() => setChartMetric("temperature")}
           />
           <HealthCard
             icon={<Activity className="w-5 h-5" />}
@@ -284,8 +293,43 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
             }
             time={paziente?.last_bp_time}
             color="purple"
+            onClick={() => setChartMetric("blood_pressure")}
           />
         </section>
+
+        {/* Modal grafico storico */}
+        {chartMetric && paziente && (
+          <HealthChartModal
+            pazienteId={String(paziente.id)}
+            metric={chartMetric}
+            title={
+              chartMetric === "spo2" ? "Ossigeno (SpO2)" :
+              chartMetric === "heart_rate" ? "Battito cardiaco" :
+              chartMetric === "temperature" ? "Temperatura" :
+              "Pressione arteriosa"
+            }
+            unit={
+              chartMetric === "spo2" ? "%" :
+              chartMetric === "heart_rate" ? "bpm" :
+              chartMetric === "temperature" ? "°C" :
+              "mmHg"
+            }
+            color={
+              chartMetric === "spo2" ? "#2563eb" :
+              chartMetric === "heart_rate" ? "#dc2626" :
+              chartMetric === "temperature" ? "#ea580c" :
+              "#9333ea"
+            }
+            normalRange={
+              chartMetric === "spo2" ? { min: 95, max: 100 } :
+              chartMetric === "heart_rate" ? { min: 60, max: 100 } :
+              chartMetric === "temperature" ? { min: 36, max: 37.5 } :
+              chartMetric === "blood_pressure" ? { min: 90, max: 140 } :
+              undefined
+            }
+            onClose={() => setChartMetric(null)}
+          />
+        )}
 
         {/* Mappa + controlli */}
         <section className="bg-white rounded-xl shadow-md p-4">
@@ -435,10 +479,10 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
 }
 
 function HealthCard({
-  icon, label, value, unit, time, color,
+  icon, label, value, unit, time, color, onClick,
 }: {
   icon: React.ReactNode; label: string; value: string; unit?: string;
-  time?: string; color: string;
+  time?: string; color: string; onClick?: () => void;
 }) {
   const colors: Record<string, string> = {
     blue: "from-blue-500 to-cyan-500",
@@ -447,12 +491,16 @@ function HealthCard({
     purple: "from-purple-500 to-violet-500",
   };
   return (
-    <div className="bg-white rounded-xl shadow-md p-3">
+    <button
+      onClick={onClick}
+      className="bg-white rounded-xl shadow-md p-3 text-left hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400"
+    >
       <div className="flex items-center gap-2 mb-2">
         <div className={`w-8 h-8 bg-gradient-to-br ${colors[color]} rounded-full flex items-center justify-center text-white`}>
           {icon}
         </div>
         <span className="text-xs font-bold text-gray-600">{label}</span>
+        <TrendingUp className="w-3 h-3 text-gray-400 ml-auto" />
       </div>
       <div className="flex items-end gap-1">
         <span className="text-2xl font-black">{value}</span>
@@ -463,6 +511,6 @@ function HealthCard({
           {new Date(time).toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" })}
         </p>
       )}
-    </div>
+    </button>
   );
 }
