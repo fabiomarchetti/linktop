@@ -14,7 +14,7 @@ export async function GET(
 
     const result = await pool.query(
       `SELECT id, name, center_lat, center_lng, radius_meters, type, active,
-              notify_on_exit, notify_on_enter, created_at
+              notify_on_exit, notify_on_enter, notify_contacts, created_at
        FROM linktop_geofences
        WHERE paziente_id = $1
        ORDER BY created_at DESC`,
@@ -42,7 +42,7 @@ export async function POST(
   try {
     const { pazienteId } = await params
     const body = await request.json()
-    const { name, center_lat, center_lng, radius_meters, type, created_by } = body
+    const { name, center_lat, center_lng, radius_meters, type, created_by, notify_contacts } = body
 
     if (!name || center_lat === undefined || center_lng === undefined || !radius_meters) {
       return NextResponse.json(
@@ -51,12 +51,16 @@ export async function POST(
       )
     }
 
+    // notify_contacts: 'emergenza' | 'emergenza2' | 'both' | 'none'
+    const allowed = ['emergenza', 'emergenza2', 'both', 'none']
+    const contactsFlag = allowed.includes(notify_contacts) ? notify_contacts : 'both'
+
     const result = await pool.query(
       `INSERT INTO linktop_geofences
-       (paziente_id, name, center_lat, center_lng, radius_meters, type, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       (paziente_id, name, center_lat, center_lng, radius_meters, type, created_by, notify_contacts)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [pazienteId, name, center_lat, center_lng, radius_meters, type || 'safe', created_by || null]
+      [pazienteId, name, center_lat, center_lng, radius_meters, type || 'safe', created_by || null, contactsFlag]
     )
 
     return NextResponse.json({ success: true, data: result.rows[0] }, { status: 201 })

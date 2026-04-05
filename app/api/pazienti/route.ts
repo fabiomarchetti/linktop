@@ -25,9 +25,11 @@ export async function GET(request: NextRequest) {
         p.cap,
         p.emergenza_nome,
         p.emergenza_telefono,
+        p.emergenza_email,
         p.emergenza_relazione,
         p.emergenza2_nome,
         p.emergenza2_telefono,
+        p.emergenza2_email,
         p.emergenza2_relazione,
         p.gruppo_sanguigno,
         p.allergie,
@@ -92,9 +94,11 @@ export async function POST(request: NextRequest) {
       cap,
       emergenza_nome,
       emergenza_telefono,
+      emergenza_email,
       emergenza_relazione,
       emergenza2_nome,
       emergenza2_telefono,
+      emergenza2_email,
       emergenza2_relazione,
       gruppo_sanguigno,
       allergie,
@@ -129,18 +133,18 @@ export async function POST(request: NextRequest) {
       `INSERT INTO linktop_pazienti (
         nome, cognome, data_nascita, luogo_nascita, codice_fiscale, password, sesso,
         telefono, email, indirizzo, citta, provincia, cap,
-        emergenza_nome, emergenza_telefono, emergenza_relazione,
-        emergenza2_nome, emergenza2_telefono, emergenza2_relazione,
+        emergenza_nome, emergenza_telefono, emergenza_email, emergenza_relazione,
+        emergenza2_nome, emergenza2_telefono, emergenza2_email, emergenza2_relazione,
         gruppo_sanguigno, allergie, patologie, farmaci, note_mediche,
         device_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)
       RETURNING *`,
       [
         nome, cognome, data_nascita, luogo_nascita, codice_fiscale, password, sesso,
         telefono, email, indirizzo, citta, provincia, cap,
-        emergenza_nome, emergenza_telefono, emergenza_relazione,
-        emergenza2_nome, emergenza2_telefono, emergenza2_relazione,
+        emergenza_nome, emergenza_telefono, emergenza_email || null, emergenza_relazione,
+        emergenza2_nome, emergenza2_telefono, emergenza2_email || null, emergenza2_relazione,
         gruppo_sanguigno, allergie, patologie, farmaci, note_mediche,
         device_id || null
       ]

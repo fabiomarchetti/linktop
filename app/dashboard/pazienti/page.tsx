@@ -27,9 +27,11 @@ interface Paziente {
   cap: string | null
   emergenza_nome: string | null
   emergenza_telefono: string | null
+  emergenza_email: string | null
   emergenza_relazione: string | null
   emergenza2_nome: string | null
   emergenza2_telefono: string | null
+  emergenza2_email: string | null
   emergenza2_relazione: string | null
   gruppo_sanguigno: string | null
   allergie: string | null
@@ -77,9 +79,11 @@ export default function PazientiPage() {
     cap: '',
     emergenza_nome: '',
     emergenza_telefono: '',
+    emergenza_email: '',
     emergenza_relazione: '',
     emergenza2_nome: '',
     emergenza2_telefono: '',
+    emergenza2_email: '',
     emergenza2_relazione: '',
     gruppo_sanguigno: '',
     allergie: '',
@@ -168,9 +172,11 @@ export default function PazientiPage() {
       cap: paziente.cap || '',
       emergenza_nome: paziente.emergenza_nome || '',
       emergenza_telefono: paziente.emergenza_telefono || '',
+      emergenza_email: paziente.emergenza_email || '',
       emergenza_relazione: paziente.emergenza_relazione || '',
       emergenza2_nome: paziente.emergenza2_nome || '',
       emergenza2_telefono: paziente.emergenza2_telefono || '',
+      emergenza2_email: paziente.emergenza2_email || '',
       emergenza2_relazione: paziente.emergenza2_relazione || '',
       gruppo_sanguigno: paziente.gruppo_sanguigno || '',
       allergie: paziente.allergie || '',
@@ -199,9 +205,11 @@ export default function PazientiPage() {
       cap: '',
       emergenza_nome: '',
       emergenza_telefono: '',
+      emergenza_email: '',
       emergenza_relazione: '',
       emergenza2_nome: '',
       emergenza2_telefono: '',
+      emergenza2_email: '',
       emergenza2_relazione: '',
       gruppo_sanguigno: '',
       allergie: '',
@@ -1497,22 +1505,13 @@ export default function PazientiPage() {
                     Contatti Emergenza
                   </h3>
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-gray-400 text-sm mb-1">Nome Contatto</label>
                         <input
                           type="text"
                           value={formData.emergenza_nome}
                           onChange={(e) => setFormData({ ...formData, emergenza_nome: e.target.value })}
-                          className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-gray-400 text-sm mb-1">Telefono</label>
-                        <input
-                          type="tel"
-                          value={formData.emergenza_telefono}
-                          onChange={(e) => setFormData({ ...formData, emergenza_telefono: e.target.value })}
                           className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                         />
                       </div>
@@ -1526,16 +1525,44 @@ export default function PazientiPage() {
                           className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                         />
                       </div>
+                      <div>
+                        <label className="block text-gray-400 text-sm mb-1">Telefono</label>
+                        <input
+                          type="tel"
+                          value={formData.emergenza_telefono}
+                          onChange={(e) => setFormData({ ...formData, emergenza_telefono: e.target.value })}
+                          className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-400 text-sm mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={formData.emergenza_email || ""}
+                          onChange={(e) => setFormData({ ...formData, emergenza_email: e.target.value })}
+                          placeholder="email@esempio.it"
+                          className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
                     </div>
 
                     <p className="text-xs text-gray-500">Contatto Secondario (opzionale)</p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <input
                           type="text"
                           value={formData.emergenza2_nome}
                           onChange={(e) => setFormData({ ...formData, emergenza2_nome: e.target.value })}
                           placeholder="Nome"
+                          className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          value={formData.emergenza2_relazione}
+                          onChange={(e) => setFormData({ ...formData, emergenza2_relazione: e.target.value })}
+                          placeholder="Relazione"
                           className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                         />
                       </div>
@@ -1550,10 +1577,10 @@ export default function PazientiPage() {
                       </div>
                       <div>
                         <input
-                          type="text"
-                          value={formData.emergenza2_relazione}
-                          onChange={(e) => setFormData({ ...formData, emergenza2_relazione: e.target.value })}
-                          placeholder="Relazione"
+                          type="email"
+                          value={formData.emergenza2_email || ""}
+                          onChange={(e) => setFormData({ ...formData, emergenza2_email: e.target.value })}
+                          placeholder="Email"
                           className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                         />
                       </div>

@@ -21,6 +21,14 @@ interface Paziente {
   codice_fiscale: string;
   data_nascita?: string;
   telefono?: string;
+  emergenza_nome?: string | null;
+  emergenza_telefono?: string | null;
+  emergenza_email?: string | null;
+  emergenza_relazione?: string | null;
+  emergenza2_nome?: string | null;
+  emergenza2_telefono?: string | null;
+  emergenza2_email?: string | null;
+  emergenza2_relazione?: string | null;
   last_heart_rate?: number;
   last_spo2?: number;
   last_temperature?: number;
@@ -71,6 +79,9 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
 
   // Modal storico GPS
   const [showGpsHistory, setShowGpsHistory] = useState(false);
+
+  // Quali contatti emergenza notificare: 'emergenza' | 'emergenza2' | 'both' | 'none'
+  const [notifyContacts, setNotifyContacts] = useState<string>("both");
 
   // Verifica sessione supervisione
   useEffect(() => {
@@ -202,6 +213,7 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
           radius_meters: draftGeofence.radius,
           type: "safe",
           created_by: "supervisione",
+          notify_contacts: notifyContacts,
         }),
       });
       const data = await res.json();
@@ -209,6 +221,7 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
         setDrawingMode(false);
         setDraftGeofence(null);
         setGeofenceName("");
+        setNotifyContacts("both");
         await loadData();
       } else {
         alert("Errore: " + data.error);
@@ -398,6 +411,7 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
             />
           )}
 
+
           {currentPos ? (
             <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
               <MapPin className="w-4 h-4" />
@@ -419,32 +433,72 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
                 Clicca e trascina sulla mappa dal centro verso l'esterno per disegnare il cerchio.
               </p>
               {draftGeofence && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder="Nome zona (es. Casa)"
-                    value={geofenceName}
-                    onChange={(e) => setGeofenceName(e.target.value)}
-                    className="flex-1 px-3 py-1.5 border rounded-lg text-sm"
-                  />
-                  <input
-                    type="number"
-                    min={20}
-                    max={5000}
-                    step={10}
-                    value={draftGeofence.radius}
-                    onChange={(e) =>
-                      setDraftGeofence({ ...draftGeofence, radius: parseInt(e.target.value) || 100 })
-                    }
-                    className="w-24 px-3 py-1.5 border rounded-lg text-sm"
-                  />
-                  <span className="text-sm text-gray-600">metri</span>
-                  <button
-                    onClick={handleSaveGeofence}
-                    className="px-3 py-1.5 bg-green-600 text-white text-sm font-bold rounded-lg"
-                  >
-                    Salva
-                  </button>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                      type="text"
+                      placeholder="Nome zona (es. Casa)"
+                      value={geofenceName}
+                      onChange={(e) => setGeofenceName(e.target.value)}
+                      className="flex-1 min-w-[150px] px-3 py-1.5 border rounded-lg text-sm"
+                    />
+                    <input
+                      type="number"
+                      min={20}
+                      max={5000}
+                      step={10}
+                      value={draftGeofence.radius}
+                      onChange={(e) =>
+                        setDraftGeofence({ ...draftGeofence, radius: parseInt(e.target.value) || 100 })
+                      }
+                      className="w-24 px-3 py-1.5 border rounded-lg text-sm"
+                    />
+                    <span className="text-sm text-gray-600">metri</span>
+                    <button
+                      onClick={handleSaveGeofence}
+                      className="px-3 py-1.5 bg-green-600 text-white text-sm font-bold rounded-lg"
+                    >
+                      Salva
+                    </button>
+                  </div>
+
+                  {/* Dropdown contatti emergenza da notificare */}
+                  <div>
+                    <p className="text-xs font-bold text-orange-900 mb-1">
+                      Avvisa quando esce dalla zona:
+                    </p>
+                    {!paziente?.emergenza_email && !paziente?.emergenza2_email ? (
+                      <div className="text-xs text-gray-600 bg-white p-2 rounded-lg">
+                        Nessun contatto di emergenza configurato per il paziente.
+                        Va aggiunto dalla pagina Pazienti (email obbligatoria).
+                      </div>
+                    ) : (
+                      <select
+                        value={notifyContacts}
+                        onChange={(e) => setNotifyContacts(e.target.value)}
+                        className="w-full px-3 py-1.5 border rounded-lg text-sm bg-white"
+                      >
+                        {paziente.emergenza_email && paziente.emergenza2_email && (
+                          <option value="both">
+                            Entrambi i contatti di emergenza
+                          </option>
+                        )}
+                        {paziente.emergenza_email && (
+                          <option value="emergenza">
+                            {paziente.emergenza_nome || "Contatto 1"}{" "}
+                            {paziente.emergenza_relazione && `(${paziente.emergenza_relazione})`}
+                          </option>
+                        )}
+                        {paziente.emergenza2_email && (
+                          <option value="emergenza2">
+                            {paziente.emergenza2_nome || "Contatto 2"}{" "}
+                            {paziente.emergenza2_relazione && `(${paziente.emergenza2_relazione})`}
+                          </option>
+                        )}
+                        <option value="none">Nessun avviso</option>
+                      </select>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
