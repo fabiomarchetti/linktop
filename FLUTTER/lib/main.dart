@@ -18,6 +18,10 @@ import 'screens/health_screen.dart';
 import 'screens/ring_screen.dart';
 import 'screens/contacts_screen.dart';
 import 'services/monitoring_service.dart';
+import 'services/gps_service.dart';
+
+// Singleton GPS service (condiviso in tutta l'app)
+final gpsService = GpsService();
 
 /// Richiede tutti i permessi necessari all'app
 Future<void> _requestAllPermissions() async {
@@ -215,10 +219,13 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> with WidgetsBindingOb
     
     // Mantieni schermo acceso
     WakelockPlus.enable();
-    
+
     // Avvia monitoraggio in background
     _startMonitoringService();
-    
+
+    // Avvia tracking GPS (posizione periodica + listener comandi)
+    gpsService.start();
+
     // Aggiorna orologio
     _updateTime();
   }
