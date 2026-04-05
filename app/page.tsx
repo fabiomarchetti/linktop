@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Heart, Stethoscope, UserCircle, Maximize2, Minimize2 } from 'lucide-react'
+import { Heart, Stethoscope, UserCircle, Maximize2, Minimize2, MapPin } from 'lucide-react'
 
 export default function HomePage() {
   const router = useRouter()
@@ -141,8 +141,8 @@ export default function HomePage() {
           </h1>
         </div>
 
-        {/* Choice Cards - Sempre 2 colonne, ottimizzato per 600x960 */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-5 max-w-lg sm:max-w-xl lg:max-w-2xl mx-auto w-full px-2">
+        {/* Choice Cards - 3 colonne */}
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-5 max-w-2xl sm:max-w-3xl lg:max-w-4xl mx-auto w-full px-2">
           {/* Card Paziente */}
           <button
             onClick={() => router.push('/utente')}
@@ -190,6 +190,35 @@ export default function HomePage() {
                 </h2>
                 <p className="text-xs sm:text-sm lg:text-base text-teal-100 font-medium">
                   Personale autorizzato
+                </p>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex items-center gap-1.5 text-white font-bold text-sm sm:text-base group-hover:gap-2 transition-all">
+                <span>Accedi</span>
+                <span className="text-base sm:text-lg">→</span>
+              </div>
+            </div>
+          </button>
+
+          {/* Card Supervisione */}
+          <button
+            onClick={() => router.push('/supervisione')}
+            className="group bg-white/10 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 shadow-2xl border-2 border-white/20 hover:border-white/40 transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-orange-500/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+          >
+            <div className="flex flex-col items-center gap-2 sm:gap-3 lg:gap-4">
+              {/* Icon */}
+              <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center shadow-xl group-hover:shadow-2xl group-hover:shadow-orange-400/50 transition-all">
+                <MapPin className="w-8 h-8 sm:w-9 sm:h-9 lg:w-11 lg:h-11 text-white" />
+              </div>
+
+              {/* Title */}
+              <div className="text-center">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-black text-white">
+                  Supervisione
+                </h2>
+                <p className="text-xs sm:text-sm lg:text-base text-teal-100 font-medium">
+                  Familiari e medici
                 </p>
               </div>
 
