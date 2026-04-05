@@ -10,6 +10,7 @@ import {
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false });
 import HealthChartModal from "./HealthChartModal";
+import GpsHistoryModal from "./GpsHistoryModal";
 
 type MetricType = "spo2" | "heart_rate" | "temperature" | "blood_pressure";
 
@@ -67,6 +68,9 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
 
   // Modal grafico salute
   const [chartMetric, setChartMetric] = useState<MetricType | null>(null);
+
+  // Modal storico GPS
+  const [showGpsHistory, setShowGpsHistory] = useState(false);
 
   // Verifica sessione supervisione
   useEffect(() => {
@@ -362,6 +366,13 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
                 )}
               </button>
               <button
+                onClick={() => setShowGpsHistory(true)}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg"
+              >
+                <Clock className="w-4 h-4" />
+                Storico percorsi
+              </button>
+              <button
                 onClick={() => {
                   setDrawingMode(!drawingMode);
                   setDraftGeofence(null);
@@ -375,6 +386,14 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
               </button>
             </div>
           </div>
+
+          {/* Modal storico GPS */}
+          {showGpsHistory && (
+            <GpsHistoryModal
+              pazienteId={String(id)}
+              onClose={() => setShowGpsHistory(false)}
+            />
+          )}
 
           {currentPos ? (
             <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
