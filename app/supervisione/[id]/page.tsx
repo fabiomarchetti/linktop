@@ -317,6 +317,42 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
               color="purple"
               onClick={() => setChartMetric("blood_pressure")}
             />
+
+            {/* Zone definite */}
+            {geofences.length > 0 && (
+              <div className="bg-white rounded-xl shadow-md p-3 mt-3">
+                <h2 className="font-bold text-sm mb-2 flex items-center gap-1">
+                  <CircleIcon className="w-4 h-4 text-orange-600" />
+                  Zone ({geofences.length})
+                </h2>
+                <div className="space-y-2">
+                  {geofences.map((g) => (
+                    <div
+                      key={g.id}
+                      className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <CircleIcon className="w-4 h-4 text-orange-600" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-sm truncate">{g.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {g.radius_meters}m
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteGeofence(g.id)}
+                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg flex-shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </aside>
 
           {/* Colonna destra: mappa + controlli (occupa tutto lo spazio rimanente) */}
@@ -524,38 +560,6 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
           </div>
         </section>
 
-            {/* Lista geofence */}
-            {geofences.length > 0 && (
-              <section className="bg-white rounded-xl shadow-md p-4">
-                <h2 className="font-bold text-lg mb-3">Zone definite ({geofences.length})</h2>
-                <div className="space-y-2">
-                  {geofences.map((g) => (
-                    <div
-                      key={g.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                          <CircleIcon className="w-5 h-5 text-orange-600" />
-                        </div>
-                        <div>
-                          <p className="font-bold">{g.name}</p>
-                          <p className="text-xs text-gray-500">
-                            Raggio: {g.radius_meters}m · {g.type}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteGeofence(g.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
           </div>
           {/* Fine colonna destra */}
         </div>
