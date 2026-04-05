@@ -275,47 +275,52 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto p-4 space-y-4">
-        {/* Parametri salute - cliccabili per grafico storico */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <HealthCard
-            icon={<Droplet className="w-5 h-5" />}
-            label="Ossigeno"
-            value={paziente?.last_spo2 ? `${paziente.last_spo2}%` : "--"}
-            time={paziente?.last_spo2_time}
-            color="blue"
-            onClick={() => setChartMetric("spo2")}
-          />
-          <HealthCard
-            icon={<Heart className="w-5 h-5" />}
-            label="Battito"
-            value={paziente?.last_heart_rate ? `${paziente.last_heart_rate}` : "--"}
-            unit="bpm"
-            time={paziente?.last_heart_rate_time}
-            color="red"
-            onClick={() => setChartMetric("heart_rate")}
-          />
-          <HealthCard
-            icon={<Thermometer className="w-5 h-5" />}
-            label="Temperatura"
-            value={paziente?.last_temperature ? `${paziente.last_temperature}°` : "--"}
-            time={paziente?.last_temperature_time}
-            color="orange"
-            onClick={() => setChartMetric("temperature")}
-          />
-          <HealthCard
-            icon={<Activity className="w-5 h-5" />}
-            label="Pressione"
-            value={
-              paziente?.last_systolic_bp && paziente?.last_diastolic_bp
-                ? `${paziente.last_systolic_bp}/${paziente.last_diastolic_bp}`
-                : "--"
-            }
-            time={paziente?.last_bp_time}
-            color="purple"
-            onClick={() => setChartMetric("blood_pressure")}
-          />
-        </section>
+      <main className="w-full px-4 py-4">
+        {/* Layout 2 colonne: parametri salute a sinistra + mappa a destra */}
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Colonna sinistra: parametri salute */}
+          <aside className="w-full lg:w-64 xl:w-72 flex-shrink-0 space-y-3">
+            <HealthCard
+              icon={<Droplet className="w-5 h-5" />}
+              label="Ossigeno"
+              value={paziente?.last_spo2 ? `${paziente.last_spo2}%` : "--"}
+              time={paziente?.last_spo2_time}
+              color="blue"
+              onClick={() => setChartMetric("spo2")}
+            />
+            <HealthCard
+              icon={<Heart className="w-5 h-5" />}
+              label="Battito"
+              value={paziente?.last_heart_rate ? `${paziente.last_heart_rate}` : "--"}
+              unit="bpm"
+              time={paziente?.last_heart_rate_time}
+              color="red"
+              onClick={() => setChartMetric("heart_rate")}
+            />
+            <HealthCard
+              icon={<Thermometer className="w-5 h-5" />}
+              label="Temperatura"
+              value={paziente?.last_temperature ? `${paziente.last_temperature}°` : "--"}
+              time={paziente?.last_temperature_time}
+              color="orange"
+              onClick={() => setChartMetric("temperature")}
+            />
+            <HealthCard
+              icon={<Activity className="w-5 h-5" />}
+              label="Pressione"
+              value={
+                paziente?.last_systolic_bp && paziente?.last_diastolic_bp
+                  ? `${paziente.last_systolic_bp}/${paziente.last_diastolic_bp}`
+                  : "--"
+              }
+              time={paziente?.last_bp_time}
+              color="purple"
+              onClick={() => setChartMetric("blood_pressure")}
+            />
+          </aside>
+
+          {/* Colonna destra: mappa + controlli (occupa tutto lo spazio rimanente) */}
+          <div className="flex-1 min-w-0 space-y-4">
 
         {/* Modal grafico storico */}
         {chartMetric && paziente && (
@@ -505,7 +510,7 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
           )}
 
           {/* Mappa */}
-          <div className="h-[500px] rounded-lg overflow-hidden border-2 border-gray-200">
+          <div className="h-[calc(100vh-200px)] min-h-[500px] rounded-lg overflow-hidden border-2 border-gray-200">
             <MapView
               center={mapCenter}
               currentPosition={currentPos}
@@ -519,38 +524,42 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
           </div>
         </section>
 
-        {/* Lista geofence */}
-        {geofences.length > 0 && (
-          <section className="bg-white rounded-xl shadow-md p-4">
-            <h2 className="font-bold text-lg mb-3">Zone definite ({geofences.length})</h2>
-            <div className="space-y-2">
-              {geofences.map((g) => (
-                <div
-                  key={g.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                      <CircleIcon className="w-5 h-5 text-orange-600" />
+            {/* Lista geofence */}
+            {geofences.length > 0 && (
+              <section className="bg-white rounded-xl shadow-md p-4">
+                <h2 className="font-bold text-lg mb-3">Zone definite ({geofences.length})</h2>
+                <div className="space-y-2">
+                  {geofences.map((g) => (
+                    <div
+                      key={g.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                          <CircleIcon className="w-5 h-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <p className="font-bold">{g.name}</p>
+                          <p className="text-xs text-gray-500">
+                            Raggio: {g.radius_meters}m · {g.type}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteGeofence(g.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                    <div>
-                      <p className="font-bold">{g.name}</p>
-                      <p className="text-xs text-gray-500">
-                        Raggio: {g.radius_meters}m · {g.type}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteGeofence(g.id)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
+              </section>
+            )}
+          </div>
+          {/* Fine colonna destra */}
+        </div>
+        {/* Fine layout 2 colonne */}
       </main>
     </div>
   );
