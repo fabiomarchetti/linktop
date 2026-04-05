@@ -1,9 +1,9 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Popup, Circle, CircleMarker, Polyline, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Circle, CircleMarker, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 // Fix icone Leaflet su Next.js
 // @ts-ignore
@@ -37,7 +37,10 @@ interface MapViewProps {
   history: Position[];
   geofences: Geofence[];
   drawingMode?: { center: [number, number]; radius: number } | null;
+  isDrawingActive?: boolean;
   onMapClick?: (lat: number, lng: number) => void;
+  onDrawUpdate?: (center: [number, number], radius: number) => void;
+  onDrawComplete?: () => void;
 }
 
 // Componente che centra la mappa quando cambia la posizione
@@ -49,13 +52,56 @@ function MapRecenter({ center }: { center: [number, number] }) {
   return null;
 }
 
-// Componente che cattura i click sulla mappa
-function ClickHandler({ onClick }: { onClick?: (lat: number, lng: number) => void }) {
-  useMapEvents({
-    click: (e) => {
-      if (onClick) onClick(e.latlng.lat, e.latlng.lng);
-    },
-  });
+// Componente che gestisce il disegno del cerchio con drag
+function DrawHandler({
+  isDrawingActive,
+  onDrawUpdate,
+  onDrawComplete,
+}: {
+  isDrawingActive?: boolean;
+  onDrawUpdate?: (center: [number, number], radius: number) => void;
+  onDrawComplete?: () => void;
+}) {
+  const map = useMap();
+  const [drawingCenter, setDrawingCenter] = useState<L.LatLng | null>(null);
+
+  useEffect(() => {
+    if (!isDrawingActive) return;
+
+    // Disabilita il drag della mappa durante il disegno
+    map.dragging.disable();
+
+    const onMouseDown = (e: L.LeafletMouseEvent) => {
+      const center = e.latlng;
+      setDrawingCenter(center);
+      onDrawUpdate?.([center.lat, center.lng], 50);
+    };
+
+    const onMouseMove = (e: L.LeafletMouseEvent) => {
+      if (!drawingCenter) return;
+      const radius = drawingCenter.distanceTo(e.latlng);
+      onDrawUpdate?.([drawingCenter.lat, drawingCenter.lng], Math.max(20, Math.round(radius)));
+    };
+
+    const onMouseUp = () => {
+      if (drawingCenter) {
+        onDrawComplete?.();
+      }
+      setDrawingCenter(null);
+    };
+
+    map.on("mousedown", onMouseDown);
+    map.on("mousemove", onMouseMove);
+    map.on("mouseup", onMouseUp);
+
+    return () => {
+      map.off("mousedown", onMouseDown);
+      map.off("mousemove", onMouseMove);
+      map.off("mouseup", onMouseUp);
+      map.dragging.enable();
+    };
+  }, [isDrawingActive, drawingCenter, map, onDrawUpdate, onDrawComplete]);
+
   return null;
 }
 
@@ -65,7 +111,10 @@ export default function MapView({
   history,
   geofences,
   drawingMode,
+  isDrawingActive,
   onMapClick,
+  onDrawUpdate,
+  onDrawComplete,
 }: MapViewProps) {
   const historyLine: [number, number][] = history.map((p) => [p.lat, p.lng]);
 
@@ -82,7 +131,11 @@ export default function MapView({
       />
 
       <MapRecenter center={center} />
-      <ClickHandler onClick={onMapClick} />
+      <DrawHandler
+        isDrawingActive={isDrawingActive}
+        onDrawUpdate={onDrawUpdate}
+        onDrawComplete={onDrawComplete}
+      />
 
       {/* Storico movimenti (polyline) */}
       {historyLine.length > 1 && (

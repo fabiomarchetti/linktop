@@ -178,9 +178,12 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
     }
   };
 
-  const handleMapClick = (lat: number, lng: number) => {
-    if (!drawingMode) return;
-    setDraftGeofence({ center: [lat, lng], radius: draftGeofence?.radius || 100 });
+  const handleDrawUpdate = (center: [number, number], radius: number) => {
+    setDraftGeofence({ center, radius });
+  };
+
+  const handleDrawComplete = () => {
+    // Il drag e' finito, aspettiamo che l'utente dia nome e clicchi Salva
   };
 
   const handleSaveGeofence = async () => {
@@ -413,7 +416,7 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
           {drawingMode && (
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-3 space-y-2">
               <p className="text-sm font-bold text-orange-900">
-                Clicca sulla mappa per posizionare il centro, poi regola il raggio.
+                Clicca e trascina sulla mappa dal centro verso l'esterno per disegnare il cerchio.
               </p>
               {draftGeofence && (
                 <div className="flex items-center gap-2">
@@ -455,7 +458,9 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
               history={history}
               geofences={geofences}
               drawingMode={draftGeofence}
-              onMapClick={handleMapClick}
+              isDrawingActive={drawingMode}
+              onDrawUpdate={handleDrawUpdate}
+              onDrawComplete={handleDrawComplete}
             />
           </div>
         </section>
