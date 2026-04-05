@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   MapPin, LogOut, Heart, Activity, Thermometer, Droplet,
-  RefreshCw, Loader2, Navigation, Circle as CircleIcon, Trash2, AlertCircle, TrendingUp,
+  RefreshCw, Loader2, Navigation, Circle as CircleIcon, Trash2, AlertCircle, TrendingUp, Clock,
 } from "lucide-react";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false });
