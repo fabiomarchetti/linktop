@@ -102,6 +102,13 @@ class _HealthScreenState extends State<HealthScreen> {
   }
 
   Future<void> _startMeasurement() async {
+    // Se il flag dice connesso ma il dispositivo non lo e' piu', riconnetti
+    if (_isConnected && !_linktop.isConnected) {
+      await _linktop.disconnect();
+      _isConnected = false;
+      _deviceName = null;
+    }
+
     if (!_isConnected) {
       await _scanAndConnect();
       if (!_isConnected) return;
@@ -140,10 +147,37 @@ class _HealthScreenState extends State<HealthScreen> {
         });
       }
     } catch (e) {
-      setState(() {
-        _status = 'Errore misurazione: $e';
-        _isMeasuring = false;
-      });
+      // Errori BLE: riconnetti e riprova
+      final errMsg = e.toString();
+      if (errMsg.contains('133') || errMsg.contains('GATT_ERROR') ||
+          errMsg.contains('not connected') || errMsg.contains('fbp-code')) {
+        setState(() {
+          _status = 'Errore connessione BLE. Riconnessione...';
+        });
+        await _linktop.disconnect();
+        setState(() {
+          _isConnected = false;
+          _deviceName = null;
+        });
+        await Future.delayed(const Duration(seconds: 2));
+        await _scanAndConnect();
+        if (_isConnected) {
+          setState(() {
+            _status = 'Riconnesso! Premi INIZIA MISURA di nuovo.';
+            _isMeasuring = false;
+          });
+        } else {
+          setState(() {
+            _status = 'Connessione fallita. Riprova.';
+            _isMeasuring = false;
+          });
+        }
+      } else {
+        setState(() {
+          _status = 'Errore misurazione: $e';
+          _isMeasuring = false;
+        });
+      }
     }
   }
 

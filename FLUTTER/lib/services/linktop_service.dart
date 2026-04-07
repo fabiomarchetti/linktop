@@ -103,8 +103,21 @@ class LinktopService {
     return result;
   }
 
-  /// Connetti a un dispositivo LINKTOP
-  Future<bool> connect(BluetoothDevice device) async {
+  /// Connetti a un dispositivo LINKTOP (con retry automatico)
+  Future<bool> connect(BluetoothDevice device, {int retries = 2}) async {
+    for (int attempt = 1; attempt <= retries; attempt++) {
+      final ok = await _tryConnect(device);
+      if (ok) return true;
+      if (attempt < retries) {
+        print('[LINKTOP] Retry connessione (tentativo ${attempt + 1}/$retries)...');
+        try { await device.disconnect(); } catch (_) {}
+        await Future.delayed(const Duration(seconds: 2));
+      }
+    }
+    return false;
+  }
+
+  Future<bool> _tryConnect(BluetoothDevice device) async {
     try {
       print('[LINKTOP] Tentativo connessione a ${device.platformName} (${device.remoteId})');
       await device.connect(timeout: const Duration(seconds: 15), autoConnect: false);
@@ -289,27 +302,13 @@ class LinktopService {
       _ppgRed.add(ir1);
       _ppgIr.add(red1);
 
-      if (_ppgRed.length > 200) {
-        _ppgRed.removeAt(0);
-        _ppgIr.removeAt(0);
-      }
+      // NON limitare a 200 — accumula tutti i campioni per 15 secondi
+      // (a 125 Hz = ~1875 campioni totali)
     }
 
-    if (_ppgRed.length >= 100) {
-      final result = _calculateVitals();
-      if (result != null) {
-        final spo2 = result['spo2']!;
-        final hr = result['hr']!;
-
-        if (spo2 >= 90 && spo2 <= 100) {
-          _finalSpo2.add(spo2);
-          if (hr > 0) _finalHr.add(hr);
-          _eventController.add(LinktopEvent.progress(
-            samplesCount: _finalSpo2.length,
-          ));
-        }
-      }
-    }
+    _eventController.add(LinktopEvent.progress(
+      samplesCount: _ppgRed.length,
+    ));
   }
 
   void _handleTempResponse(List<int> data) {
@@ -404,12 +403,11 @@ class LinktopService {
     if (dcRed > 0 && dcIr > 0 && acRed > 0 && acIr > 0) {
       final R = (acRed / dcRed) / (acIr / dcIr);
 
-      final values = <int>[
-        (70 + 28 * R).round(),
-        ((110 - 25 * R).round()) + 11,
-        (97 + (1 - R) * 20).round(),
-        (102 - (R - 0.8) * 10).round(),
-      ];
+      final v1 = (70 + 28 * R).round();
+      final v2 = ((110 - 25 * R).round()) + 11;
+      final v3 = (97 + (1 - R) * 20).round();
+      final v4 = (102 - (R - 0.8) * 10).round();
+      final values = <int>[v1, v2, v3, v4];
       values.sort();
       int rawSpo2 = values[values.length ~/ 2];
 
@@ -423,10 +421,93 @@ class LinktopService {
 
       final validHr = (hr >= 40 && hr <= 150) ? hr : 0;
 
+      print('[LINKTOP] R=$R | formule: v1=$v1 v2=$v2 v3=$v3 v4=$v4 | rawSpo2=$rawSpo2 avgSpo2=$avgSpo2 spo2=$spo2');
+      print('[LINKTOP] acRed=$acRed dcRed=${dcRed.toStringAsFixed(0)} acIr=$acIr dcIr=${dcIr.toStringAsFixed(0)}');
+      print('[LINKTOP] peaks=$peaks duration=${durationSec.toStringAsFixed(1)}s hrRaw=${((peaks / durationSec) * 60).round()} hrCorrected=$hr validHr=$validHr');
+      print('[LINKTOP] red samples: min=$redMin max=$redMax | ir samples: min=$irMin max=$irMax');
+
       return {'hr': validHr, 'spo2': spo2};
     }
 
+    print('[LINKTOP] calculateVitals: SKIP - dcRed=$dcRed dcIr=$dcIr acRed=$acRed acIr=$acIr');
     return null;
+  }
+
+  /// Calcola HR e SpO2 usando TUTTI i campioni raccolti in 15 secondi
+  Map<String, int>? _calculateVitalsFinal() {
+    if (_ppgRed.length < 200 || _ppgIr.length < 200) return null;
+
+    // Usa tutti i campioni disponibili
+    final irSamples = List<int>.from(_ppgIr);
+    final redSamples = List<int>.from(_ppgRed);
+
+    // HR: peak detection su tutto il buffer
+    final irMean = irSamples.reduce((a, b) => a + b) / irSamples.length;
+    final irVar = irSamples
+        .map((v) => math.pow(v - irMean, 2).toDouble())
+        .reduce((a, b) => a + b) / irSamples.length;
+    final irStd = math.sqrt(irVar);
+
+    final threshold = irMean + (irStd * 0.3);
+    int peaks = 0;
+    int lastPeak = -45;
+
+    for (int i = 2; i < irSamples.length - 2; i++) {
+      final isLocalMax = irSamples[i] > threshold &&
+          irSamples[i] > irSamples[i - 1] &&
+          irSamples[i] > irSamples[i - 2] &&
+          irSamples[i] >= irSamples[i + 1] &&
+          i - lastPeak > 45;
+      if (isLocalMax) {
+        peaks++;
+        lastPeak = i;
+      }
+    }
+
+    final durationSec = irSamples.length / 125.0;
+    int hr = ((peaks / durationSec) * 60).round();
+
+    // SpO2: usa ultimi 500 campioni (4 secondi) per stabilita'
+    final n = math.min(500, redSamples.length);
+    final redLast = redSamples.sublist(redSamples.length - n);
+    final irLast = irSamples.sublist(irSamples.length - n);
+
+    final redMean = redLast.reduce((a, b) => a + b) / redLast.length;
+    final redMax = redLast.reduce(math.max);
+    final redMin = redLast.reduce(math.min);
+    final acRed = (redMax - redMin) / 2.0;
+    final dcRed = redMean;
+
+    final irLMean = irLast.reduce((a, b) => a + b) / irLast.length;
+    final irMax = irLast.reduce(math.max);
+    final irMin = irLast.reduce(math.min);
+    final acIr = (irMax - irMin) / 2.0;
+    final dcIr = irLMean;
+
+    int spo2 = 0;
+    if (dcRed > 0 && dcIr > 0 && acRed > 0 && acIr > 0) {
+      final R = (acRed / dcRed) / (acIr / dcIr);
+
+      final values = <int>[
+        (70 + 28 * R).round(),
+        ((110 - 25 * R).round()) + 11,
+        (97 + (1 - R) * 20).round(),
+        (102 - (R - 0.8) * 10).round(),
+      ];
+      values.sort();
+      spo2 = values[values.length ~/ 2]; // senza offset (calibrazione fatta dallo staff)
+      spo2 = spo2.clamp(90, 100);
+    }
+
+    final validHr = (hr >= 30 && hr <= 200) ? hr : 0;
+
+    print('[LINKTOP] FINALE: ${irSamples.length} campioni, ${durationSec.toStringAsFixed(1)}s');
+    print('[LINKTOP] FINALE: peaks=$peaks hr=$hr validHr=$validHr');
+    print('[LINKTOP] FINALE: R=${dcRed > 0 && dcIr > 0 ? ((acRed / dcRed) / (acIr / dcIr)).toStringAsFixed(3) : "N/A"} spo2=$spo2');
+
+    if (validHr == 0 && spo2 == 0) return null;
+
+    return {'spo2': spo2, 'hr': validHr};
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -441,8 +522,6 @@ class LinktopService {
     // Reset
     _ppgRed.clear();
     _ppgIr.clear();
-    _finalSpo2 = [];
-    _finalHr = [];
     _spo2History = [];
     _spo2MeasurementDone = false;
 
@@ -450,18 +529,19 @@ class LinktopService {
     final cmd = _buildCommand(MEASURE_SPO2, [0x00]);
     await _writeChar!.write(cmd.toList(), withoutResponse: false);
 
-    // Aspetta 15 secondi raccogliendo dati
+    // Aspetta 15 secondi raccogliendo TUTTI i campioni PPG
     await Future.delayed(const Duration(seconds: MEASUREMENT_DURATION_SEC));
 
-    // Marca la misurazione come terminata: le risposte successive vengono ignorate
+    // Marca la misurazione come terminata
     _spo2MeasurementDone = true;
 
-    if (_finalSpo2.isEmpty) return null;
+    print('[LINKTOP] Campioni raccolti: red=${_ppgRed.length} ir=${_ppgIr.length}');
 
-    final finalSpo2 = _median(_finalSpo2);
-    final finalHr = _finalHr.isNotEmpty ? _median(_finalHr) : 0;
+    if (_ppgRed.length < 200) return null;
 
-    return {'spo2': finalSpo2, 'hr': finalHr};
+    // Calcola con TUTTI i campioni raccolti (non solo ultimi 150)
+    final result = _calculateVitalsFinal();
+    return result;
   }
 
   /// Avvia misurazione temperatura

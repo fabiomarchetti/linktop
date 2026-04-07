@@ -87,7 +87,7 @@ void main() async {
     overlays: [], // Nasconde navigation bar e status bar
   );
   
-  // Orientamento solo portrait
+  // Orientamento solo portrait (smartphone)
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
@@ -341,6 +341,7 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> with WidgetsBindingOb
 
   @override
   Widget build(BuildContext context) {
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
     return PopScope(
       // Blocca tasto back
       canPop: false,
@@ -352,8 +353,16 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> with WidgetsBindingOb
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
+            child: isLandscape ? _buildLandscapeLayout() : _buildPortraitLayout(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPortraitLayout() {
+    return Column(
+      children: [
                 // ═══════════════════════════════════════════════════
                 // HEADER CON OROLOGIO
                 // ═══════════════════════════════════════════════════
@@ -523,10 +532,165 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> with WidgetsBindingOb
                   ),
                 ),
               ],
-            ),
+    );
+  }
+
+  Widget _buildLandscapeLayout() {
+    return Row(
+      children: [
+        // Colonna sinistra: orologio + SOS + status
+        Expanded(
+          flex: 2,
+          child: Column(
+            children: [
+              GestureDetector(
+                onTap: _handleAdminTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    _currentTime,
+                    style: const TextStyle(
+                      fontSize: 84,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ),
+              const Spacer(),
+              SizedBox(
+                width: double.infinity,
+                height: 100,
+                child: ElevatedButton(
+                  onPressed: _handleSOS,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red[700],
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                  ),
+                  child: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.emergency, size: 40),
+                        SizedBox(width: 10),
+                        Text('EMERGENZA SOS',
+                            style: TextStyle(
+                                fontSize: 26, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 5,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildStatusIcon(
+                      icon: Icons.watch,
+                      label: 'Anello',
+                      isConnected: _ringConnected,
+                    ),
+                    _buildStatusIcon(
+                      icon: Icons.bluetooth,
+                      label: 'Linktop',
+                      isConnected: _linktopConnected,
+                    ),
+                    _buildStatusIcon(
+                      icon: Icons.gps_fixed,
+                      label: 'GPS',
+                      isConnected: true,
+                    ),
+                    Row(
+                      children: [
+                        Icon(
+                          _batteryLevel > 20
+                              ? Icons.battery_full
+                              : Icons.battery_alert,
+                          color: _batteryLevel > 20
+                              ? Colors.green
+                              : Colors.red,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 4),
+                        Text('$_batteryLevel%',
+                            style: const TextStyle(fontSize: 16)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-      ),
+        const SizedBox(width: 16),
+        // Colonna destra: griglia 2x2 bottoni
+        Expanded(
+          flex: 3,
+          child: GridView.count(
+            crossAxisCount: 2,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: 1.2,
+            children: [
+              _buildMainButton(
+                icon: Icons.phone,
+                label: 'CHIAMA',
+                color: Colors.green,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PhoneScreen()),
+                ),
+              ),
+              _buildMainButton(
+                icon: Icons.people,
+                label: 'FAMIGLIA',
+                color: Colors.blue,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ContactsScreen()),
+                ),
+              ),
+              _buildMainButton(
+                icon: Icons.favorite,
+                label: 'SALUTE',
+                color: Colors.red,
+                badge: _linktopConnected ? '✓' : null,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HealthScreen()),
+                ),
+              ),
+              _buildMainButton(
+                icon: Icons.watch,
+                label: 'ANELLO',
+                color: Colors.purple,
+                badge: _ringConnected ? '✓' : null,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RingScreen()),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

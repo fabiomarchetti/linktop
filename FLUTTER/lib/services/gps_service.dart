@@ -10,18 +10,52 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:battery_plus/battery_plus.dart';
 
+class Geofence {
+  final int id;
+  final String name;
+  final double centerLat;
+  final double centerLng;
+  final int radiusMeters;
+  final bool notifyOnExit;
+  final bool notifyOnEnter;
+  bool? wasInside; // stato precedente (null = mai calcolato)
+
+  Geofence({
+    required this.id,
+    required this.name,
+    required this.centerLat,
+    required this.centerLng,
+    required this.radiusMeters,
+    required this.notifyOnExit,
+    required this.notifyOnEnter,
+  });
+
+  factory Geofence.fromJson(Map<String, dynamic> j) => Geofence(
+        id: j['id'] as int,
+        name: j['name'] as String,
+        centerLat: double.parse(j['center_lat'].toString()),
+        centerLng: double.parse(j['center_lng'].toString()),
+        radiusMeters: j['radius_meters'] as int,
+        notifyOnExit: j['notify_on_exit'] ?? true,
+        notifyOnEnter: j['notify_on_enter'] ?? false,
+      );
+}
+
 class GpsService {
   static const String API_BASE = 'https://www.monitoraggiosalute.com/api';
   static const Duration TRACKING_INTERVAL = Duration(minutes: 5);
   static const Duration COMMAND_POLL_INTERVAL = Duration(seconds: 3);
+  static const Duration GEOFENCE_REFRESH_INTERVAL = Duration(minutes: 10);
 
   Timer? _timer;
   Timer? _commandPollTimer;
+  Timer? _geofenceRefreshTimer;
   RealtimeChannel? _commandsChannel;
   int? _pazienteId;
   final Battery _battery = Battery();
   bool _isRunning = false;
   final Set<int> _handledCommands = {};
+  List<Geofence> _geofences = [];
 
   bool get isRunning => _isRunning;
 
@@ -69,6 +103,41 @@ class GpsService {
     _commandPollTimer = Timer.periodic(COMMAND_POLL_INTERVAL, (_) {
       _pollPendingCommands();
     });
+
+    // Carica geofences ora e ogni 10 minuti
+    _loadGeofences();
+    _geofenceRefreshTimer = Timer.periodic(GEOFENCE_REFRESH_INTERVAL, (_) {
+      _loadGeofences();
+    });
+  }
+
+  /// Carica le geofences del paziente dal portale
+  Future<void> _loadGeofences() async {
+    if (_pazienteId == null) return;
+    try {
+      final response = await http.get(
+        Uri.parse('$API_BASE/geofences/$_pazienteId'),
+      );
+      if (response.statusCode != 200) return;
+      final data = jsonDecode(response.body);
+      if (data['success'] != true) return;
+      final List rows = data['data'] ?? [];
+
+      // Mantieni wasInside per geofence gia' note
+      final Map<int, bool?> previousStates = {
+        for (final g in _geofences) g.id: g.wasInside,
+      };
+
+      _geofences = rows.map((r) {
+        final g = Geofence.fromJson(Map<String, dynamic>.from(r));
+        g.wasInside = previousStates[g.id];
+        return g;
+      }).toList();
+
+      print('[GPS] Geofences caricate: ${_geofences.length}');
+    } catch (e) {
+      print('[GPS] Errore caricamento geofences: $e');
+    }
   }
 
   /// Ferma il tracking
@@ -77,6 +146,8 @@ class GpsService {
     _timer = null;
     _commandPollTimer?.cancel();
     _commandPollTimer = null;
+    _geofenceRefreshTimer?.cancel();
+    _geofenceRefreshTimer = null;
     await _commandsChannel?.unsubscribe();
     _commandsChannel = null;
     _isRunning = false;
@@ -118,6 +189,62 @@ class GpsService {
     await _sendPosition(source: source);
   }
 
+  /// Verifica se la posizione fa entrare/uscire da una geofence
+  /// e notifica il portale in caso di transizione.
+  void _checkGeofenceTransitions(Position position) {
+    for (final g in _geofences) {
+      final distance = Geolocator.distanceBetween(
+        position.latitude,
+        position.longitude,
+        g.centerLat,
+        g.centerLng,
+      );
+      final isInside = distance <= g.radiusMeters;
+
+      if (g.wasInside == null) {
+        // Prima misurazione per questa zona: solo memorizza, niente notifica
+        g.wasInside = isInside;
+        continue;
+      }
+
+      if (isInside && g.wasInside == false) {
+        // ENTRATO
+        print('[GPS] ENTRATO in zona "${g.name}" (dist=${distance.toStringAsFixed(0)}m)');
+        if (g.notifyOnEnter) {
+          _notifyGeofenceEvent(g, 'enter', position);
+        }
+      } else if (!isInside && g.wasInside == true) {
+        // USCITO
+        print('[GPS] USCITO da zona "${g.name}" (dist=${distance.toStringAsFixed(0)}m)');
+        if (g.notifyOnExit) {
+          _notifyGeofenceEvent(g, 'exit', position);
+        }
+      }
+
+      g.wasInside = isInside;
+    }
+  }
+
+  /// Invia alert al portale
+  Future<void> _notifyGeofenceEvent(Geofence g, String eventType, Position pos) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$API_BASE/alerts/geofence'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'paziente_id': _pazienteId,
+          'geofence_id': g.id,
+          'event_type': eventType,
+          'lat': pos.latitude,
+          'lng': pos.longitude,
+        }),
+      );
+      print('[GPS] Alert geofence ${eventType}: ${response.statusCode} ${response.body}');
+    } catch (e) {
+      print('[GPS] Errore alert geofence: $e');
+    }
+  }
+
   /// Legge la posizione GPS e la invia al portale
   Future<Position?> _sendPosition({String source = 'auto', int? commandId}) async {
     if (_pazienteId == null) return null;
@@ -153,6 +280,9 @@ class GpsService {
       );
 
       print('[GPS] Response: ${response.statusCode}');
+
+      // Verifica geofence: enter/exit
+      _checkGeofenceTransitions(position);
 
       // Se e' una risposta a un comando, segnala completamento
       if (commandId != null) {
