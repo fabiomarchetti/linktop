@@ -53,6 +53,124 @@ function MapRecenter({ center }: { center: [number, number] }) {
   return null;
 }
 
+// Marker rosso con reverse geocoding e bottone email
+function SelectedPositionMarker({ position }: { position: Position }) {
+  const [address, setAddress] = useState<string | null>(null);
+  const [loadingAddr, setLoadingAddr] = useState(false);
+
+  useEffect(() => {
+    setAddress(null);
+    setLoadingAddr(true);
+    fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.lat}&lon=${position.lng}&zoom=18&addressdetails=1`,
+      { headers: { "Accept-Language": "it" } }
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.display_name) {
+          setAddress(data.display_name);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingAddr(false));
+  }, [position.lat, position.lng]);
+
+  const googleMapsUrl = `https://www.google.com/maps?q=${position.lat},${position.lng}`;
+  const dateStr = position.recorded_at
+    ? new Date(position.recorded_at).toLocaleString("it-IT")
+    : "";
+
+  const emailSubject = encodeURIComponent("Posizione paziente");
+  const emailBody = encodeURIComponent(
+    `Posizione rilevata il ${dateStr}\n\n` +
+    `${address || `Lat: ${position.lat}, Lng: ${position.lng}`}\n\n` +
+    `Apri su Google Maps:\n${googleMapsUrl}`
+  );
+  const mailtoUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+
+  return (
+    <Marker
+      position={[position.lat, position.lng]}
+      icon={L.divIcon({
+        html: '<div style="width:24px;height:24px;background:red;border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></div>',
+        className: "",
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      })}
+    >
+      <Popup minWidth={220} maxWidth={300}>
+        <div style={{ fontSize: "13px", lineHeight: 1.5 }}>
+          <strong style={{ color: "red", fontSize: "14px" }}>
+            Posizione selezionata
+          </strong>
+          <br />
+          {dateStr && (
+            <span style={{ color: "#666" }}>{dateStr}</span>
+          )}
+          {position.accuracy && (
+            <span style={{ color: "#999" }}>
+              {" "}· ±{Math.round(position.accuracy)}m
+            </span>
+          )}
+          {loadingAddr && (
+            <div style={{ color: "#999", marginTop: 4 }}>
+              Caricamento indirizzo...
+            </div>
+          )}
+          {address && (
+            <div
+              style={{
+                marginTop: 6,
+                padding: "6px 8px",
+                background: "#f3f4f6",
+                borderRadius: 6,
+                fontSize: "12px",
+                color: "#333",
+              }}
+            >
+              📍 {address}
+            </div>
+          )}
+          <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
+            <a
+              href={googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-block",
+                background: "#2563eb",
+                color: "white",
+                padding: "6px 10px",
+                borderRadius: 6,
+                textDecoration: "none",
+                fontSize: "12px",
+                fontWeight: "bold",
+              }}
+            >
+              🗺️ Google Maps
+            </a>
+            <a
+              href={mailtoUrl}
+              style={{
+                display: "inline-block",
+                background: "#16a34a",
+                color: "white",
+                padding: "6px 10px",
+                borderRadius: 6,
+                textDecoration: "none",
+                fontSize: "12px",
+                fontWeight: "bold",
+              }}
+            >
+              ✉️ Invia Email
+            </a>
+          </div>
+        </div>
+      </Popup>
+    </Marker>
+  );
+}
+
 // Componente che centra la mappa sulla posizione selezionata
 function SelectedMarkerRecenter({ position }: { position: [number, number] }) {
   const map = useMap();
@@ -222,32 +340,11 @@ export default function MapView({
         </Circle>
       ))}
 
-      {/* Posizione selezionata dalla cronologia (marker rosso grande) */}
+      {/* Posizione selezionata dalla cronologia (marker rosso grande con indirizzo) */}
       {selectedPosition && (
         <>
           <SelectedMarkerRecenter position={[selectedPosition.lat, selectedPosition.lng]} />
-          <Marker
-            position={[selectedPosition.lat, selectedPosition.lng]}
-            icon={L.divIcon({
-              html: '<div style="width:24px;height:24px;background:red;border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></div>',
-              className: '',
-              iconSize: [24, 24],
-              iconAnchor: [12, 12],
-            })}
-          >
-            <Popup>
-              <strong style={{color: "red"}}>Posizione selezionata</strong>
-              <br />
-              {selectedPosition.recorded_at &&
-                new Date(selectedPosition.recorded_at).toLocaleString("it-IT")}
-              {selectedPosition.accuracy && (
-                <>
-                  <br />
-                  Precisione: ±{Math.round(selectedPosition.accuracy)} m
-                </>
-              )}
-            </Popup>
-          </Marker>
+          <SelectedPositionMarker position={selectedPosition} />
           <Circle
             center={[selectedPosition.lat, selectedPosition.lng]}
             radius={selectedPosition.accuracy || 30}
