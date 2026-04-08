@@ -53,14 +53,16 @@ function MapRecenter({ center }: { center: [number, number] }) {
   return null;
 }
 
-// Marker rosso con reverse geocoding e bottone email
+// Marker rosso con reverse geocoding e bottoni condivisione
 function SelectedPositionMarker({ position }: { position: Position }) {
   const [address, setAddress] = useState<string | null>(null);
   const [loadingAddr, setLoadingAddr] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setAddress(null);
     setLoadingAddr(true);
+    setCopied(false);
     fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.lat}&lon=${position.lng}&zoom=18&addressdetails=1`,
       { headers: { "Accept-Language": "it" } }
@@ -80,13 +82,25 @@ function SelectedPositionMarker({ position }: { position: Position }) {
     ? new Date(position.recorded_at).toLocaleString("it-IT")
     : "";
 
-  const emailSubject = encodeURIComponent("Posizione paziente");
-  const emailBody = encodeURIComponent(
+  const subject = "Posizione paziente";
+  const body =
     `Posizione rilevata il ${dateStr}\n\n` +
     `${address || `Lat: ${position.lat}, Lng: ${position.lng}`}\n\n` +
-    `Apri su Google Maps:\n${googleMapsUrl}`
-  );
-  const mailtoUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+    `Apri su Google Maps:\n${googleMapsUrl}`;
+
+  const subjectEnc = encodeURIComponent(subject);
+  const bodyEnc = encodeURIComponent(body);
+
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${subjectEnc}&body=${bodyEnc}`;
+  const mailtoUrl = `mailto:?subject=${subjectEnc}&body=${bodyEnc}`;
+  const whatsappUrl = `https://wa.me/?text=${bodyEnc}`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(body).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   return (
     <Marker
@@ -98,18 +112,17 @@ function SelectedPositionMarker({ position }: { position: Position }) {
         iconAnchor: [12, 12],
       })}
     >
-      <Popup minWidth={220} maxWidth={300}>
+      <Popup minWidth={260} maxWidth={320}>
         <div style={{ fontSize: "13px", lineHeight: 1.5 }}>
           <strong style={{ color: "red", fontSize: "14px" }}>
             Posizione selezionata
           </strong>
           <br />
-          {dateStr && (
-            <span style={{ color: "#666" }}>{dateStr}</span>
-          )}
+          {dateStr && <span style={{ color: "#666" }}>{dateStr}</span>}
           {position.accuracy && (
             <span style={{ color: "#999" }}>
-              {" "}· ±{Math.round(position.accuracy)}m
+              {" "}
+              · ±{Math.round(position.accuracy)}m
             </span>
           )}
           {loadingAddr && (
@@ -131,39 +144,99 @@ function SelectedPositionMarker({ position }: { position: Position }) {
               📍 {address}
             </div>
           )}
-          <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
+          <div style={{ marginTop: 8 }}>
             <a
               href={googleMapsUrl}
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                display: "inline-block",
+                display: "block",
                 background: "#2563eb",
                 color: "white",
-                padding: "6px 10px",
+                padding: "8px 10px",
                 borderRadius: 6,
                 textDecoration: "none",
                 fontSize: "12px",
                 fontWeight: "bold",
+                textAlign: "center",
+                marginBottom: 6,
               }}
             >
-              🗺️ Google Maps
+              🗺️ Apri su Google Maps
             </a>
-            <a
-              href={mailtoUrl}
+            <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+              <a
+                href={gmailUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  flex: 1,
+                  display: "block",
+                  background: "#dc2626",
+                  color: "white",
+                  padding: "6px 8px",
+                  borderRadius: 6,
+                  textDecoration: "none",
+                  fontSize: "11px",
+                  fontWeight: "bold",
+                  textAlign: "center",
+                }}
+              >
+                ✉️ Gmail
+              </a>
+              <a
+                href={mailtoUrl}
+                style={{
+                  flex: 1,
+                  display: "block",
+                  background: "#0891b2",
+                  color: "white",
+                  padding: "6px 8px",
+                  borderRadius: 6,
+                  textDecoration: "none",
+                  fontSize: "11px",
+                  fontWeight: "bold",
+                  textAlign: "center",
+                }}
+              >
+                📧 Mail
+              </a>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  flex: 1,
+                  display: "block",
+                  background: "#16a34a",
+                  color: "white",
+                  padding: "6px 8px",
+                  borderRadius: 6,
+                  textDecoration: "none",
+                  fontSize: "11px",
+                  fontWeight: "bold",
+                  textAlign: "center",
+                }}
+              >
+                💬 WhatsApp
+              </a>
+            </div>
+            <button
+              onClick={handleCopy}
               style={{
-                display: "inline-block",
-                background: "#16a34a",
+                width: "100%",
+                background: copied ? "#16a34a" : "#6b7280",
                 color: "white",
                 padding: "6px 10px",
                 borderRadius: 6,
-                textDecoration: "none",
-                fontSize: "12px",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "11px",
                 fontWeight: "bold",
               }}
             >
-              ✉️ Invia Email
-            </a>
+              {copied ? "✓ Copiato!" : "📋 Copia testo"}
+            </button>
           </div>
         </div>
       </Popup>
