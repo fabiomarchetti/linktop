@@ -9,6 +9,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:battery_plus/battery_plus.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -207,6 +208,7 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> with WidgetsBindingOb
   bool _linktopConnected = false;
   int _batteryLevel = 100;
   String _currentTime = '';
+  final Battery _battery = Battery();
   
   // Contatore per sblocco admin (tap 5 volte su orologio)
   int _adminTapCount = 0;
@@ -226,6 +228,9 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> with WidgetsBindingOb
     // Avvia tracking GPS (posizione periodica + listener comandi)
     gpsService.start();
 
+    // Leggi batteria reale e aggiorna ogni minuto
+    _updateBattery();
+
     // Aggiorna orologio
     _updateTime();
   }
@@ -244,6 +249,15 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> with WidgetsBindingOb
       // L'utente ha provato a uscire, riporta l'app in primo piano
       // (funziona solo se l'app è impostata come launcher)
     }
+  }
+
+  void _updateBattery() {
+    _battery.batteryLevel.then((level) {
+      if (mounted) setState(() => _batteryLevel = level);
+    });
+    Future.delayed(const Duration(minutes: 1), () {
+      if (mounted) _updateBattery();
+    });
   }
 
   void _updateTime() {

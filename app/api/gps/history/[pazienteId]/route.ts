@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import pool from '@/lib/db'
 
 /**
- * GET /api/gps/history/[pazienteId]?days=7
- * Ritorna lo storico posizioni degli ultimi N giorni (default 7)
+ * GET /api/gps/history/[pazienteId]?days=7 oppure ?hours=5
+ * Ritorna lo storico posizioni (priorita' a hours se presente)
  */
 export async function GET(
   request: NextRequest,
@@ -12,17 +12,25 @@ export async function GET(
   try {
     const { pazienteId } = await params
     const { searchParams } = new URL(request.url)
-    const days = parseInt(searchParams.get('days') || '7')
-    const limit = parseInt(searchParams.get('limit') || '500')
+    const hours = searchParams.get('hours')
+    const days = searchParams.get('days')
+    const limit = parseInt(searchParams.get('limit') || '1000')
+
+    let interval: string
+    if (hours) {
+      interval = `${parseInt(hours)} hours`
+    } else {
+      interval = `${parseInt(days || '7')} days`
+    }
 
     const result = await pool.query(
       `SELECT id, lat, lng, accuracy, recorded_at
       FROM linktop_gps_positions
       WHERE paziente_id = $1
-        AND recorded_at >= NOW() - INTERVAL '1 day' * $2
+        AND recorded_at >= NOW() - INTERVAL '${interval}'
       ORDER BY recorded_at DESC
-      LIMIT $3`,
-      [pazienteId, days, limit]
+      LIMIT $2`,
+      [pazienteId, limit]
     )
 
     return NextResponse.json({

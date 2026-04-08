@@ -38,6 +38,7 @@ interface MapViewProps {
   geofences: Geofence[];
   drawingMode?: { center: [number, number]; radius: number } | null;
   isDrawingActive?: boolean;
+  selectedPosition?: Position | null;
   onMapClick?: (lat: number, lng: number) => void;
   onDrawUpdate?: (center: [number, number], radius: number) => void;
   onDrawComplete?: () => void;
@@ -49,6 +50,15 @@ function MapRecenter({ center }: { center: [number, number] }) {
   useEffect(() => {
     map.setView(center, map.getZoom());
   }, [center, map]);
+  return null;
+}
+
+// Componente che centra la mappa sulla posizione selezionata
+function SelectedMarkerRecenter({ position }: { position: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(position, 17);
+  }, [position, map]);
   return null;
 }
 
@@ -112,7 +122,7 @@ export default function MapView({
   geofences,
   drawingMode,
   isDrawingActive,
-  onMapClick,
+  selectedPosition,
   onDrawUpdate,
   onDrawComplete,
 }: MapViewProps) {
@@ -211,6 +221,40 @@ export default function MapView({
           </Popup>
         </Circle>
       ))}
+
+      {/* Posizione selezionata dalla cronologia (marker rosso grande) */}
+      {selectedPosition && (
+        <>
+          <SelectedMarkerRecenter position={[selectedPosition.lat, selectedPosition.lng]} />
+          <Marker
+            position={[selectedPosition.lat, selectedPosition.lng]}
+            icon={L.divIcon({
+              html: '<div style="width:24px;height:24px;background:red;border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></div>',
+              className: '',
+              iconSize: [24, 24],
+              iconAnchor: [12, 12],
+            })}
+          >
+            <Popup>
+              <strong style={{color: "red"}}>Posizione selezionata</strong>
+              <br />
+              {selectedPosition.recorded_at &&
+                new Date(selectedPosition.recorded_at).toLocaleString("it-IT")}
+              {selectedPosition.accuracy && (
+                <>
+                  <br />
+                  Precisione: ±{Math.round(selectedPosition.accuracy)} m
+                </>
+              )}
+            </Popup>
+          </Marker>
+          <Circle
+            center={[selectedPosition.lat, selectedPosition.lng]}
+            radius={selectedPosition.accuracy || 30}
+            pathOptions={{ color: "red", fillColor: "red", fillOpacity: 0.15 }}
+          />
+        </>
+      )}
 
       {/* Cerchio in disegno */}
       {drawingMode && (
