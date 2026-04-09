@@ -401,7 +401,7 @@ export default function MapView({
 
       {/* Storico movimenti (polyline su strada via OSRM) */}
       {routeLine.length > 1 && (
-        <Polyline positions={routeLine} color="blue" weight={3} opacity={0.7} />
+        <Polyline positions={routeLine} color="#3b82f6" weight={2} opacity={0.35} dashArray="6,10" />
       )}
 
       {/* Marker per ogni posizione storica (esclusa l'ultima che e' "current") */}
