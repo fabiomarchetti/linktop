@@ -3,7 +3,7 @@
 import { MapContainer, TileLayer, Marker, Popup, Circle, CircleMarker, Polyline, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 // Fix icone Leaflet su Next.js
 // @ts-ignore
@@ -306,6 +306,53 @@ function DrawHandler({
   return null;
 }
 
+// Chiama OSRM match per snappare il tracciato GPS alle strade reali
+async function fetchOsrmRoute(points: Position[]): Promise<[number, number][]> {
+  if (points.length < 2) return [];
+
+  // Ordina per data crescente
+  const sorted = [...points].sort((a, b) => {
+    if (!a.recorded_at || !b.recorded_at) return 0;
+    return new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime();
+  });
+
+  // OSRM ha limite 100 waypoints: campiona se necessario
+  let sampled = sorted;
+  if (sorted.length > 100) {
+    const step = Math.ceil(sorted.length / 100);
+    sampled = sorted.filter((_, i) => i % step === 0);
+    // Aggiungi sempre l'ultimo punto
+    if (sampled[sampled.length - 1] !== sorted[sorted.length - 1]) {
+      sampled.push(sorted[sorted.length - 1]);
+    }
+  }
+
+  const coords = sampled.map((p) => `${p.lng},${p.lat}`).join(";");
+  const timestamps = sampled
+    .map((p) => (p.recorded_at ? Math.floor(new Date(p.recorded_at).getTime() / 1000) : null))
+    .filter(Boolean)
+    .join(";");
+
+  const hasTimestamps = timestamps.split(";").length === sampled.length;
+  const url =
+    `https://router.project-osrm.org/match/v1/driving/${coords}` +
+    `?overview=full&geometries=geojson` +
+    (hasTimestamps ? `&timestamps=${timestamps}` : "");
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.matchings && data.matchings.length > 0) {
+      return data.matchings.flatMap((m: { geometry: { coordinates: [number, number][] } }) =>
+        m.geometry.coordinates.map(([lng, lat]) => [lat, lng] as [number, number])
+      );
+    }
+  } catch {}
+
+  // Fallback: linee rette
+  return sampled.map((p) => [p.lat, p.lng] as [number, number]);
+}
+
 export default function MapView({
   center,
   currentPosition,
@@ -317,7 +364,21 @@ export default function MapView({
   onDrawUpdate,
   onDrawComplete,
 }: MapViewProps) {
-  const historyLine: [number, number][] = history.map((p) => [p.lat, p.lng]);
+  const [routeLine, setRouteLine] = useState<[number, number][]>([]);
+  const prevHistoryRef = useRef<string>("");
+
+  useEffect(() => {
+    const key = history.map((p) => p.id ?? `${p.lat},${p.lng}`).join(",");
+    if (key === prevHistoryRef.current) return;
+    prevHistoryRef.current = key;
+
+    if (history.length < 2) {
+      setRouteLine([]);
+      return;
+    }
+
+    fetchOsrmRoute(history).then(setRouteLine);
+  }, [history]);
 
   return (
     <MapContainer
@@ -338,9 +399,9 @@ export default function MapView({
         onDrawComplete={onDrawComplete}
       />
 
-      {/* Storico movimenti (polyline) */}
-      {historyLine.length > 1 && (
-        <Polyline positions={historyLine} color="blue" weight={3} opacity={0.6} dashArray="5,8" />
+      {/* Storico movimenti (polyline su strada via OSRM) */}
+      {routeLine.length > 1 && (
+        <Polyline positions={routeLine} color="blue" weight={3} opacity={0.7} />
       )}
 
       {/* Marker per ogni posizione storica (esclusa l'ultima che e' "current") */}
