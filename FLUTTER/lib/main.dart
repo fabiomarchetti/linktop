@@ -18,11 +18,16 @@ import 'screens/phone_screen.dart';
 import 'screens/health_screen.dart';
 import 'screens/ring_screen.dart';
 import 'screens/contacts_screen.dart';
+import 'screens/colmi_test_screen.dart';
 import 'services/monitoring_service.dart';
 import 'services/gps_service.dart';
+import 'services/colmi_service.dart';
 
 // Singleton GPS service (condiviso in tutta l'app)
 final gpsService = GpsService();
+
+// Singleton Colmi service (condiviso in tutta l'app)
+final colmiService = ColmiService();
 
 /// Richiede tutti i permessi necessari all'app
 Future<void> _requestAllPermissions() async {
@@ -228,6 +233,19 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> with WidgetsBindingOb
     // Avvia tracking GPS (posizione periodica + listener comandi)
     gpsService.start();
 
+    // Configura callback per misurazioni remote con anello Colmi
+    gpsService.onMeasureRingCommand = (int commandId) async {
+      final prefs = await SharedPreferences.getInstance();
+      final pazienteId = prefs.getString('patient_id') ?? '';
+      if (pazienteId.isEmpty) return;
+      await colmiService.measureAndSave(
+        pazienteId: pazienteId,
+        apiBase: 'https://www.monitoraggiosalute.com/api',
+        commandId: commandId,
+        completeCommand: gpsService.completeCommandPublic,
+      );
+    };
+
     // Leggi batteria reale e aggiorna ogni minuto
     _updateBattery();
 
@@ -336,6 +354,17 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> with WidgetsBindingOb
               onTap: () {
                 Navigator.pop(context);
                 // Riconnetti ring
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.ring_volume, size: 32),
+              title: const Text('Test Anello Colmi R09', style: TextStyle(fontSize: 20)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ColmiTestScreen()),
+                );
               },
             ),
             ListTile(

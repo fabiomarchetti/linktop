@@ -57,6 +57,8 @@ class GpsService {
   final Set<int> _handledCommands = {};
   List<Geofence> _geofences = [];
 
+  Function(int commandId)? onMeasureRingCommand;
+
   bool get isRunning => _isRunning;
 
   /// Avvia il tracking GPS periodico + listener comandi realtime
@@ -342,12 +344,24 @@ class GpsService {
       case 'get_position':
         await _sendPosition(source: 'request', commandId: commandId);
         break;
+      case 'misura_anello':
+        if (onMeasureRingCommand != null) {
+          onMeasureRingCommand!(commandId!);
+        } else {
+          print('[GPS] onMeasureRingCommand non configurato');
+          await _completeCommand(commandId!, null, error: 'handler non configurato');
+        }
+        break;
       default:
         print('[GPS] Comando non gestito: $commandType');
     }
   }
 
   /// Aggiorna lo status del comando via API portale
+  /// Metodo pubblico per completare un comando (usato da servizi esterni come ColmiService)
+  Future<void> completeCommandPublic(int commandId, Map<String, dynamic>? result, {String? error}) =>
+      _completeCommand(commandId, result, error: error);
+
   Future<void> _completeCommand(int commandId, Map<String, dynamic>? result, {String? error}) async {
     try {
       await http.post(

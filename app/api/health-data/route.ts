@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
       location,
       notes,
       raw_data,
+      source,
     } = body
 
     // Validazione base
@@ -50,8 +51,9 @@ export async function POST(request: NextRequest) {
         location,
         notes,
         raw_data,
+        source,
         recorded_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
       RETURNING id, recorded_at
     `, [
       paziente_id,
@@ -67,6 +69,7 @@ export async function POST(request: NextRequest) {
       location || null,
       notes || null,
       raw_data ? JSON.stringify(raw_data) : null,
+      source || 'linktop',
     ])
 
     const healthDataId = insertResult.rows[0].id

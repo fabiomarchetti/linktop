@@ -1,5 +1,5 @@
 // lib/screens/health_screen.dart
-// Schermata salute per misurazione con dispositivi LINKTOP
+// Schermata salute per misurazione con dispositivi LINKTOP o Anello Colmi R09
 
 import 'dart:async';
 import 'dart:convert';
@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/linktop_service.dart';
+import '../services/colmi_service.dart';
 
 class HealthScreen extends StatefulWidget {
   const HealthScreen({super.key});
@@ -17,6 +18,10 @@ class HealthScreen extends StatefulWidget {
 
 class _HealthScreenState extends State<HealthScreen> {
   final LinktopService _linktop = LinktopService();
+  final ColmiService _colmi = ColmiService();
+
+  // Selettore dispositivo: false = LINKTOP, true = Anello Colmi
+  bool _useColmi = false;
 
   bool _isConnected = false;
   bool _isScanning = false;
@@ -42,6 +47,7 @@ class _HealthScreenState extends State<HealthScreen> {
   void dispose() {
     _eventSub?.cancel();
     _linktop.disconnect();
+    _colmi.dispose();
     super.dispose();
   }
 
@@ -98,6 +104,142 @@ class _HealthScreenState extends State<HealthScreen> {
         _isScanning = false;
         _status = 'Errore: $e';
       });
+    }
+  }
+
+  /// Misurazione con anello Colmi R09
+  Future<void> _startColmiMeasurement() async {
+    setState(() {
+      _isMeasuring = true;
+      _isScanning = true;
+      _status = 'Cerco anello Colmi R09...';
+      _lastSpO2 = null;
+      _lastHR = null;
+      _lastTemp = null;
+    });
+
+    try {
+      final device = await _colmi.findDevice(timeout: const Duration(seconds: 15));
+      if (device == null) {
+        setState(() {
+          _isMeasuring = false;
+          _isScanning = false;
+          _status = 'Anello non trovato. Assicurati che sia indossato e vicino.';
+        });
+        return;
+      }
+
+      setState(() {
+        _isScanning = false;
+        _status = 'Connessione a ${device.platformName}...';
+      });
+
+      final ok = await _colmi.connect(device);
+      if (!ok) {
+        setState(() {
+          _isMeasuring = false;
+          _status = 'Connessione all\'anello fallita. Riprova.';
+        });
+        return;
+      }
+
+      setState(() {
+        _isConnected = true;
+        _deviceName = _colmi.deviceName;
+        _status = 'Misurazione battito (30 sec)...';
+      });
+
+      int? hr;
+      int? spo2;
+
+      final sub = _colmi.events.listen((event) {
+        if (event.type == ColmiEventType.heartRate && event.hr != null) {
+          hr = event.hr;
+          if (mounted) setState(() => _lastHR = hr);
+        }
+        if (event.type == ColmiEventType.spO2 && event.spo2 != null) {
+          spo2 = event.spo2;
+          if (mounted) setState(() => _lastSpO2 = spo2);
+        }
+      });
+
+      await _colmi.startHeartRate();
+      await Future.delayed(const Duration(seconds: 30));
+      await _colmi.stopHeartRate();
+
+      setState(() => _status = 'Misurazione ossigeno (15 sec)...');
+
+      await _colmi.startSpO2();
+      await Future.delayed(const Duration(seconds: 15));
+      await _colmi.stopSpO2();
+
+      await sub.cancel();
+      await _colmi.disconnect();
+
+      setState(() {
+        _isConnected = false;
+        _deviceName = null;
+      });
+
+      if (hr == null && spo2 == null) {
+        setState(() {
+          _isMeasuring = false;
+          _status = 'Nessun dato rilevato. Indossa l\'anello e riprova.';
+        });
+        return;
+      }
+
+      setState(() {
+        _lastHR = hr;
+        _lastSpO2 = spo2;
+        _lastMeasurement = DateTime.now();
+        _isMeasuring = false;
+        _status = 'Misurazione completata!';
+      });
+
+      await _saveColmiMeasurement(hr: hr, spo2: spo2);
+    } catch (e) {
+      setState(() {
+        _isMeasuring = false;
+        _isScanning = false;
+        _isConnected = false;
+        _status = 'Errore: $e';
+      });
+    }
+  }
+
+  Future<void> _saveColmiMeasurement({int? hr, int? spo2}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final patientId = prefs.getString('patient_id');
+      if (patientId == null) {
+        setState(() => _status = 'Paziente non identificato');
+        return;
+      }
+      final pazienteId = int.tryParse(patientId) ?? patientId;
+      final url = Uri.parse('https://www.monitoraggiosalute.com/api/health-data');
+      final headers = {'Content-Type': 'application/json'};
+
+      final body = <String, dynamic>{
+        'paziente_id': pazienteId,
+        'source': 'colmi',
+        'measurement_type': 'health_monitor',
+      };
+      if (hr != null) body['heart_rate'] = hr;
+      if (spo2 != null) body['spo2'] = spo2;
+
+      print('[COLMI SAVE] POST: $body');
+      final r = await http.post(url, headers: headers, body: jsonEncode(body));
+      print('[COLMI SAVE] Response ${r.statusCode}: ${r.body}');
+
+      setState(() {
+        _status = (r.statusCode == 200 || r.statusCode == 201)
+            ? 'Dati salvati sul portale!'
+            : 'Errore salvataggio (${r.statusCode})';
+      });
+    } catch (e) {
+      print('[COLMI SAVE] Eccezione: $e');
+      setState(() => _status = 'Errore invio: $e');
     }
   }
 
@@ -371,7 +513,9 @@ class _HealthScreenState extends State<HealthScreen> {
             margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: _isConnected ? Colors.green : Colors.grey,
+              color: _isConnected
+                  ? (_useColmi ? Colors.purple : Colors.green)
+                  : Colors.grey,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -461,14 +605,116 @@ class _HealthScreenState extends State<HealthScreen> {
 
             const SizedBox(height: 20),
 
+            // Selettore dispositivo
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'DISPOSITIVO',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: _isMeasuring ? null : () => setState(() {
+                            _useColmi = false;
+                            _status = 'Premi INIZIA MISURA per iniziare';
+                          }),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: !_useColmi ? Colors.red : Colors.grey[100],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.device_hub,
+                                  color: !_useColmi ? Colors.white : Colors.grey,
+                                  size: 24,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'LINKTOP',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: !_useColmi ? Colors.white : Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: _isMeasuring ? null : () => setState(() {
+                            _useColmi = true;
+                            _status = 'Premi INIZIA MISURA per iniziare';
+                          }),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: _useColmi ? Colors.purple : Colors.grey[100],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.watch,
+                                  color: _useColmi ? Colors.white : Colors.grey,
+                                  size: 24,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'ANELLO R09',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: _useColmi ? Colors.white : Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
             // Bottone MISURA
             SizedBox(
               width: double.infinity,
               height: 100,
               child: ElevatedButton(
-                onPressed: _isMeasuring || _isScanning ? null : _startMeasurement,
+                onPressed: _isMeasuring || _isScanning ? null : (_useColmi ? _startColmiMeasurement : _startMeasurement),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: (_isMeasuring || _isScanning) ? Colors.grey : Colors.red,
+                  backgroundColor: (_isMeasuring || _isScanning)
+                      ? Colors.grey
+                      : (_useColmi ? Colors.purple : Colors.red),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),

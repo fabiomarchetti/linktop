@@ -67,7 +67,7 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
   const [geofences, setGeofences] = useState<Geofence[]>([]);
   const [loading, setLoading] = useState(true);
   const [requestingPosition, setRequestingPosition] = useState(false);
-  const [error, setError] = useState("");
+  const [requestingRing, setRequestingRing] = useState(false);
 
   // Drawing geofence
   const [drawingMode, setDrawingMode] = useState(false);
@@ -131,7 +131,7 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
         if (d.success) setGeofences(d.data);
       }
     } catch (e: any) {
-      setError(e.message);
+      console.error('Errore caricamento dati:', e.message);
     } finally {
       setLoading(false);
     }
@@ -185,6 +185,49 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
       }, 1000);
     } catch (e: any) {
       setRequestingPosition(false);
+      alert("Errore: " + e.message);
+    }
+  };
+
+  const handleRequestRing = async () => {
+    setRequestingRing(true);
+    try {
+      const res = await fetch(`/api/health/request-ring/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert("Errore: " + (data.error || "impossibile inviare comando"));
+        setRequestingRing(false);
+        return;
+      }
+
+      // Polling fino a 2 minuti (connessione ~5s + HR 30s + SpO2 35s + margine)
+      const commandId = data.command_id;
+      let attempts = 0;
+      const maxAttempts = 120;
+
+      const poll = setInterval(async () => {
+        attempts++;
+        const r = await fetch(`/api/health/request-ring/${id}?command_id=${commandId}`);
+        const d = await r.json();
+        if (d.success && d.data?.status === "completed") {
+          clearInterval(poll);
+          setRequestingRing(false);
+          await loadData();
+        } else if (attempts >= maxAttempts || d.data?.status === "failed") {
+          clearInterval(poll);
+          setRequestingRing(false);
+          if (d.data?.status === "failed") {
+            alert("Misurazione fallita. Assicurarsi che l'anello sia indossato e riprova.");
+          } else {
+            alert("Timeout: il dispositivo non ha risposto entro 2 minuti. Riprova.");
+          }
+        }
+      }, 1000);
+    } catch (e: any) {
+      setRequestingRing(false);
       alert("Errore: " + e.message);
     }
   };
@@ -317,6 +360,23 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
               color="purple"
               onClick={() => setChartMetric("blood_pressure")}
             />
+
+            {/* Bottone misura anello */}
+            <button
+              onClick={handleRequestRing}
+              disabled={requestingRing}
+              className="w-full flex items-center justify-center gap-2 px-3 py-3 text-sm bg-gradient-to-r from-purple-500 to-violet-600 text-white font-bold rounded-xl shadow-md disabled:opacity-50 hover:from-purple-600 hover:to-violet-700 transition-all"
+            >
+              {requestingRing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Attesa anello...
+                </>
+              ) : (
+                <>
+                  <Activity className="w-4 h-4" /> Misura Anello
+                </>
+              )}
+            </button>
 
             {/* Zone definite */}
             {geofences.length > 0 && (

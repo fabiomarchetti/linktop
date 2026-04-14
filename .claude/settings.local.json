@@ -17,7 +17,8 @@
       "Bash(git commit:*)",
       "Bash(npx sharp-cli:*)",
       "Bash(tree:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Read(//Users/fabio/Desktop/qring_src/sources/com/qcwireless/smart/ui/home/heart/**)"
     ]
   }
 }
