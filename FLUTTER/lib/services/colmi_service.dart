@@ -234,10 +234,15 @@ class ColmiService {
       final errCode = data[2];
       print('[COLMI] StartMeasure resp: type=$type errCode=$errCode value=${data[3]}');
       if (errCode == 0) {
-        if (type == 1 && data.length >= 7) {
-          final hr = data[6];
-          if (hr > 20 && hr < 220) {
-            _eventController.add(ColmiEvent.heartRate(hr: hr));
+        if (type == 1 && data.length >= 8) {
+          // byte[6]+byte[7] = intervallo RR in ms (little-endian)
+          // HR = 60000 / intervallo_ms
+          final intervalMs = data[6] | (data[7] << 8);
+          if (intervalMs > 200 && intervalMs < 3000) {
+            final hr = (60000 / intervalMs).round();
+            if (hr >= 30 && hr <= 220) {
+              _eventController.add(ColmiEvent.heartRate(hr: hr));
+            }
           }
         } else if (type == 3) {
           final spo2 = data[3];
@@ -299,8 +304,8 @@ class ColmiService {
   Future<bool> measureAndSave({
     required String pazienteId,
     required String apiBase,
-    required int commandId,
-    required Future<void> Function(int, Map<String, dynamic>?, {String? error}) completeCommand,
+    int? commandId,
+    Future<void> Function(int, Map<String, dynamic>?, {String? error})? completeCommand,
   }) async {
     int? hr;
     int? spo2;
@@ -309,13 +314,13 @@ class ColmiService {
       // Connetti all'anello
       final device = await findDevice(timeout: const Duration(seconds: 15));
       if (device == null) {
-        await completeCommand(commandId, null, error: 'Anello non trovato');
+        if (commandId != null) await completeCommand?.call(commandId, null, error: 'Anello non trovato');
         return false;
       }
 
       final ok = await connect(device);
       if (!ok) {
-        await completeCommand(commandId, null, error: 'Connessione fallita');
+        if (commandId != null) await completeCommand?.call(commandId, null, error: 'Connessione fallita');
         return false;
       }
 
@@ -342,29 +347,40 @@ class ColmiService {
       await disconnect();
 
       if (hr == null && spo2 == null) {
-        await completeCommand(commandId, null, error: 'Nessun dato rilevato');
+        print('[COLMI] measureAndSave: nessun dato rilevato, comando fallito');
+        if (commandId != null) await completeCommand?.call(commandId, null, error: 'Nessun dato rilevato');
         return false;
       }
 
+      print('[COLMI] measureAndSave: HR=$hr SpO2=$spo2 — salvo sul portale');
+
       // Salva sul portale
+      // measurement_type deve rispettare il CHECK constraint del DB:
+      // 'heart_rate', 'blood_pressure', 'spo2', 'temperature', 'otoscope', 'stethoscope'
+      final String measureType = spo2 != null ? 'spo2' : 'heart_rate';
       final url = Uri.parse('$apiBase/health-data');
       final body = <String, dynamic>{
         'paziente_id': int.tryParse(pazienteId) ?? pazienteId,
         'source': 'colmi',
-        'measurement_type': 'health_monitor',
+        'measurement_type': measureType,
       };
       if (hr != null) body['heart_rate'] = hr;
       if (spo2 != null) body['spo2'] = spo2;
 
-      await http.post(url,
+      final response = await http.post(url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
+      print('[COLMI] measureAndSave: health-data POST status=${response.statusCode}');
 
-      await completeCommand(commandId, {'hr': hr, 'spo2': spo2});
+      if (commandId != null) {
+        await completeCommand?.call(commandId, {'hr': hr, 'spo2': spo2});
+        print('[COLMI] measureAndSave: completeCommand chiamato per id=$commandId');
+      }
       return true;
     } catch (e) {
-      await completeCommand(commandId, null, error: e.toString());
+      print('[COLMI] measureAndSave: ECCEZIONE: $e');
+      if (commandId != null) await completeCommand?.call(commandId, null, error: e.toString());
       return false;
     }
   }

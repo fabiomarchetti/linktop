@@ -246,6 +246,17 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> with WidgetsBindingOb
       );
     };
 
+    // Configura callback per misurazioni automatiche pianificate (no commandId)
+    gpsService.onAutoMeasureRing = () async {
+      final prefs = await SharedPreferences.getInstance();
+      final pazienteId = prefs.getString('patient_id') ?? '';
+      if (pazienteId.isEmpty) return;
+      await colmiService.measureAndSave(
+        pazienteId: pazienteId,
+        apiBase: 'https://www.monitoraggiosalute.com/api',
+      );
+    };
+
     // Leggi batteria reale e aggiorna ogni minuto
     _updateBattery();
 

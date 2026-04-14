@@ -50,14 +50,19 @@ class GpsService {
   Timer? _timer;
   Timer? _commandPollTimer;
   Timer? _geofenceRefreshTimer;
+  Timer? _autoMeasureTimer;
+  Timer? _scheduleRefreshTimer;
   RealtimeChannel? _commandsChannel;
   int? _pazienteId;
   final Battery _battery = Battery();
   bool _isRunning = false;
   final Set<int> _handledCommands = {};
   List<Geofence> _geofences = [];
+  int? _autoMeasureIntervalMinutes;
 
   Function(int commandId)? onMeasureRingCommand;
+  /// Callback per misurazioni automatiche (senza commandId)
+  Future<void> Function()? onAutoMeasureRing;
 
   bool get isRunning => _isRunning;
 
@@ -111,6 +116,12 @@ class GpsService {
     _geofenceRefreshTimer = Timer.periodic(GEOFENCE_REFRESH_INTERVAL, (_) {
       _loadGeofences();
     });
+
+    // Carica schedule auto-misura e aggiorna ogni 5 minuti
+    _fetchAndApplySchedule();
+    _scheduleRefreshTimer = Timer.periodic(const Duration(minutes: 5), (_) {
+      _fetchAndApplySchedule();
+    });
   }
 
   /// Carica le geofences del paziente dal portale
@@ -150,10 +161,55 @@ class GpsService {
     _commandPollTimer = null;
     _geofenceRefreshTimer?.cancel();
     _geofenceRefreshTimer = null;
+    _autoMeasureTimer?.cancel();
+    _autoMeasureTimer = null;
+    _scheduleRefreshTimer?.cancel();
+    _scheduleRefreshTimer = null;
     await _commandsChannel?.unsubscribe();
     _commandsChannel = null;
     _isRunning = false;
     print('[GPS] Tracking fermato');
+  }
+
+  /// Recupera lo schedule dal portale e (ri)avvia il timer automatico
+  Future<void> _fetchAndApplySchedule() async {
+    if (_pazienteId == null) return;
+    try {
+      final response = await http.get(
+        Uri.parse('$API_BASE/health/schedule/$_pazienteId'),
+      );
+      if (response.statusCode != 200) return;
+      final data = jsonDecode(response.body);
+      if (data['success'] != true) return;
+      final int? interval = data['interval_minutes'];
+      _applySchedule(interval);
+    } catch (e) {
+      print('[GPS] Errore fetch schedule: $e');
+    }
+  }
+
+  void _applySchedule(int? intervalMinutes) {
+    _autoMeasureTimer?.cancel();
+    _autoMeasureTimer = null;
+
+    if (intervalMinutes == null || intervalMinutes <= 0) {
+      if (_autoMeasureIntervalMinutes != null) {
+        print('[GPS] Auto-misura disattivata');
+      }
+      _autoMeasureIntervalMinutes = null;
+      return;
+    }
+
+    if (_autoMeasureIntervalMinutes == intervalMinutes) return; // nessun cambiamento
+    _autoMeasureIntervalMinutes = intervalMinutes;
+    print('[GPS] Auto-misura attiva: ogni $intervalMinutes minuti');
+
+    _autoMeasureTimer = Timer.periodic(Duration(minutes: intervalMinutes), (_) async {
+      print('[GPS] Auto-misura: avvio misurazione programmata');
+      if (onAutoMeasureRing != null) {
+        await onAutoMeasureRing!();
+      }
+    });
   }
 
   /// Polling: controlla comandi pending via API del portale

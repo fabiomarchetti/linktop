@@ -68,6 +68,8 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
   const [loading, setLoading] = useState(true);
   const [requestingPosition, setRequestingPosition] = useState(false);
   const [requestingRing, setRequestingRing] = useState(false);
+  const [autoMeasureInterval, setAutoMeasureInterval] = useState<number | null>(null);
+  const [savingSchedule, setSavingSchedule] = useState(false);
 
   // Drawing geofence
   const [drawingMode, setDrawingMode] = useState(false);
@@ -104,11 +106,12 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
   // Carica dati
   const loadData = useCallback(async () => {
     try {
-      const [pRes, latestRes, histRes, geoRes] = await Promise.all([
+      const [pRes, latestRes, histRes, geoRes, schedRes] = await Promise.all([
         fetch(`/api/pazienti/${id}`),
         fetch(`/api/gps/latest/${id}`),
         fetch(`/api/gps/history/${id}?days=7`),
         fetch(`/api/geofences/${id}`),
+        fetch(`/api/health/schedule/${id}`),
       ]);
 
       if (pRes.ok) {
@@ -129,6 +132,11 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
       if (geoRes.ok) {
         const d = await geoRes.json();
         if (d.success) setGeofences(d.data);
+      }
+
+      if (schedRes.ok) {
+        const d = await schedRes.json();
+        if (d.success) setAutoMeasureInterval(d.interval_minutes ?? null);
       }
     } catch (e: any) {
       console.error('Errore caricamento dati:', e.message);
@@ -229,6 +237,28 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
     } catch (e: any) {
       setRequestingRing(false);
       alert("Errore: " + e.message);
+    }
+  };
+
+  const handleScheduleChange = async (value: string) => {
+    const interval = value === "" ? null : parseInt(value);
+    setSavingSchedule(true);
+    try {
+      const res = await fetch(`/api/health/schedule/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ interval_minutes: interval }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAutoMeasureInterval(interval);
+      } else {
+        alert("Errore salvataggio: " + data.error);
+      }
+    } catch (e: any) {
+      alert("Errore: " + e.message);
+    } finally {
+      setSavingSchedule(false);
     }
   };
 
@@ -377,6 +407,37 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
                 </>
               )}
             </button>
+
+            {/* Misurazione automatica */}
+            <div className="bg-white rounded-xl shadow-md p-3">
+              <h2 className="font-bold text-sm mb-2 flex items-center gap-1 text-purple-700">
+                <Activity className="w-4 h-4" />
+                Misura automatica
+              </h2>
+              <select
+                value={autoMeasureInterval ?? ""}
+                onChange={(e) => handleScheduleChange(e.target.value)}
+                disabled={savingSchedule}
+                className="w-full text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-50"
+              >
+                <option value="">Disattivata</option>
+                <option value="5">Ogni 5 minuti</option>
+                <option value="15">Ogni 15 minuti</option>
+                <option value="30">Ogni 30 minuti</option>
+                <option value="60">Ogni ora</option>
+                <option value="120">Ogni 2 ore</option>
+                <option value="300">Ogni 5 ore</option>
+                <option value="720">Ogni 12 ore</option>
+                <option value="1440">Ogni 24 ore</option>
+              </select>
+              {autoMeasureInterval && (
+                <p className="text-xs text-purple-600 mt-1">
+                  ✓ Attiva — prossima misura entro {autoMeasureInterval >= 60
+                    ? `${autoMeasureInterval / 60}h`
+                    : `${autoMeasureInterval}min`}
+                </p>
+              )}
+            </div>
 
             {/* Zone definite */}
             {geofences.length > 0 && (
