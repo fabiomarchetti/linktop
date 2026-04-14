@@ -25,6 +25,7 @@ class ColmiService {
   BluetoothCharacteristic? _txChar; // notify
   StreamSubscription? _notifySubscription;
   bool _isConnected = false;
+  bool _isMeasuring = false; // previene misurazioni concorrenti
   String? _deviceName;
 
   final _eventController = StreamController<ColmiEvent>.broadcast();
@@ -307,6 +308,13 @@ class ColmiService {
     int? commandId,
     Future<void> Function(int, Map<String, dynamic>?, {String? error})? completeCommand,
   }) async {
+    if (_isMeasuring) {
+      print('[COLMI] measureAndSave: misurazione già in corso, salto');
+      if (commandId != null) await completeCommand?.call(commandId, null, error: 'Misurazione già in corso');
+      return false;
+    }
+    _isMeasuring = true;
+
     int? hr;
     int? spo2;
 
@@ -377,10 +385,12 @@ class ColmiService {
         await completeCommand?.call(commandId, {'hr': hr, 'spo2': spo2});
         print('[COLMI] measureAndSave: completeCommand chiamato per id=$commandId');
       }
+      _isMeasuring = false;
       return true;
     } catch (e) {
       print('[COLMI] measureAndSave: ECCEZIONE: $e');
       if (commandId != null) await completeCommand?.call(commandId, null, error: e.toString());
+      _isMeasuring = false;
       return false;
     }
   }
