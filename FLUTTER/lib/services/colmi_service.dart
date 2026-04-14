@@ -226,18 +226,24 @@ class ColmiService {
       return;
     }
 
-    // Risposta StartHeartRateReq [0x69, type, errCode, value, ...]
-    // type=1→HR, type=3→SpO2; value=byte[3]
+    // Risposta StartHeartRateReq [0x69, type, errCode, ...]
+    // HR (type=1): valore a byte[6] → [0x69, 0x01, 0x00, 0x00, 0x00, 0x00, HR, 0x03, ...]
+    // SpO2 (type=3): valore a byte[3] → [0x69, 0x03, 0x00, SpO2, 0x01, ...]
     if (cmd == CMD_START_MEASURE && data.length >= 4) {
       final type = data[1];
       final errCode = data[2];
-      final value = data[3];
-      print('[COLMI] StartMeasure resp: type=$type errCode=$errCode value=$value');
+      print('[COLMI] StartMeasure resp: type=$type errCode=$errCode value=${data[3]}');
       if (errCode == 0) {
-        if (type == 1 && value > 20 && value < 250) {
-          _eventController.add(ColmiEvent.heartRate(hr: value));
-        } else if (type == 3 && value > 50 && value <= 100) {
-          _eventController.add(ColmiEvent.spO2(spo2: value));
+        if (type == 1 && data.length >= 7) {
+          final hr = data[6];
+          if (hr > 20 && hr < 220) {
+            _eventController.add(ColmiEvent.heartRate(hr: hr));
+          }
+        } else if (type == 3) {
+          final spo2 = data[3];
+          if (spo2 > 50 && spo2 <= 100) {
+            _eventController.add(ColmiEvent.spO2(spo2: spo2));
+          }
         }
       }
     }
