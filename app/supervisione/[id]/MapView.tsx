@@ -306,45 +306,44 @@ function DrawHandler({
   return null;
 }
 
-// Chiama OSRM match per snappare il tracciato GPS alle strade reali
-async function fetchOsrmRoute(points: Position[]): Promise<[number, number][]> {
-  if (points.length < 2) return [];
+// Divide i punti GPS in sessioni: gap > 30 min = nuova sessione
+function splitIntoSessions(points: Position[], gapMinutes = 30): Position[][] {
+  if (points.length === 0) return [];
+  const sessions: Position[][] = [];
+  let current: Position[] = [points[0]];
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1].recorded_at ? new Date(points[i - 1].recorded_at!).getTime() : 0;
+    const curr = points[i].recorded_at ? new Date(points[i].recorded_at!).getTime() : 0;
+    if (prev > 0 && curr > 0 && curr - prev > gapMinutes * 60 * 1000) {
+      sessions.push(current);
+      current = [points[i]];
+    } else {
+      current.push(points[i]);
+    }
+  }
+  sessions.push(current);
+  return sessions;
+}
 
-  // Ordina per data crescente
-  const sorted = [...points].sort((a, b) => {
-    if (!a.recorded_at || !b.recorded_at) return 0;
-    return new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime();
-  });
-
-  // Rimuovi outlier GPS: punti oltre 2 km dalla mediana vengono scartati
-  const lats = [...sorted].map((p) => p.lat).sort((a, b) => a - b);
-  const lngs = [...sorted].map((p) => p.lng).sort((a, b) => a - b);
-  const medLat = lats[Math.floor(lats.length / 2)];
-  const medLng = lngs[Math.floor(lngs.length / 2)];
-  const MAX_DEG = 0.018; // ~2 km in gradi
-  const filtered = sorted.filter(
-    (p) => Math.abs(p.lat - medLat) < MAX_DEG && Math.abs(p.lng - medLng) < MAX_DEG
-  );
-  const clean = filtered.length >= 2 ? filtered : sorted;
-
-  // OSRM ha limite 100 waypoints: campiona se necessario
-  let sampled = clean;
-  if (sorted.length > 100) {
-    const step = Math.ceil(sorted.length / 100);
-    sampled = sorted.filter((_, i) => i % step === 0);
-    // Aggiungi sempre l'ultimo punto
-    if (sampled[sampled.length - 1] !== sorted[sorted.length - 1]) {
-      sampled.push(sorted[sorted.length - 1]);
+// OSRM match per una singola sessione (max 100 punti, gap continuo)
+async function osrmMatchSession(session: Position[]): Promise<[number, number][]> {
+  // Campiona a max 100 punti
+  let sampled = session;
+  if (session.length > 100) {
+    const step = Math.ceil(session.length / 100);
+    sampled = session.filter((_, i) => i % step === 0);
+    if (sampled[sampled.length - 1] !== session[session.length - 1]) {
+      sampled.push(session[session.length - 1]);
     }
   }
 
   const coords = sampled.map((p) => `${p.lng},${p.lat}`).join(";");
-  const timestamps = sampled
-    .map((p) => (p.recorded_at ? Math.floor(new Date(p.recorded_at).getTime() / 1000) : null))
-    .filter(Boolean)
-    .join(";");
+  const tsArr = sampled.map((p) =>
+    p.recorded_at ? Math.floor(new Date(p.recorded_at).getTime() / 1000) : null
+  );
+  const hasTimestamps = tsArr.every((t) => t !== null);
+  const timestamps = tsArr.join(";");
 
-  const hasTimestamps = timestamps.split(";").length === sampled.length;
   const url =
     `https://router.project-osrm.org/match/v1/driving/${coords}` +
     `?overview=full&geometries=geojson` +
@@ -352,6 +351,7 @@ async function fetchOsrmRoute(points: Position[]): Promise<[number, number][]> {
 
   try {
     const res = await fetch(url);
+    if (!res.ok) throw new Error(`OSRM ${res.status}`);
     const data = await res.json();
     if (data.matchings && data.matchings.length > 0) {
       return data.matchings.flatMap((m: { geometry: { coordinates: [number, number][] } }) =>
@@ -362,6 +362,30 @@ async function fetchOsrmRoute(points: Position[]): Promise<[number, number][]> {
 
   // Fallback: linee rette
   return sampled.map((p) => [p.lat, p.lng] as [number, number]);
+}
+
+// Costruisce il tracciato completo: divide per sessioni, OSRM ciascuna
+async function fetchOsrmRoute(points: Position[]): Promise<[number, number][]> {
+  if (points.length < 2) return [];
+
+  // Ordina per data crescente
+  const sorted = [...points].sort((a, b) => {
+    if (!a.recorded_at || !b.recorded_at) return 0;
+    return new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime();
+  });
+
+  // Dividi in sessioni (gap > 30 min)
+  const sessions = splitIntoSessions(sorted, 30);
+
+  // Processa ogni sessione in parallelo (max 3 sessioni contemporanee)
+  const allLines: [number, number][][] = [];
+  for (let i = 0; i < sessions.length; i += 3) {
+    const batch = sessions.slice(i, i + 3).filter((s) => s.length >= 2);
+    const results = await Promise.all(batch.map(osrmMatchSession));
+    allLines.push(...results);
+  }
+
+  return allLines.flat();
 }
 
 export default function MapView({
