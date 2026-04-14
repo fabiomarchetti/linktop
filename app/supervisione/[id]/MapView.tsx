@@ -316,8 +316,19 @@ async function fetchOsrmRoute(points: Position[]): Promise<[number, number][]> {
     return new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime();
   });
 
+  // Rimuovi outlier GPS: punti oltre 2 km dalla mediana vengono scartati
+  const lats = [...sorted].map((p) => p.lat).sort((a, b) => a - b);
+  const lngs = [...sorted].map((p) => p.lng).sort((a, b) => a - b);
+  const medLat = lats[Math.floor(lats.length / 2)];
+  const medLng = lngs[Math.floor(lngs.length / 2)];
+  const MAX_DEG = 0.018; // ~2 km in gradi
+  const filtered = sorted.filter(
+    (p) => Math.abs(p.lat - medLat) < MAX_DEG && Math.abs(p.lng - medLng) < MAX_DEG
+  );
+  const clean = filtered.length >= 2 ? filtered : sorted;
+
   // OSRM ha limite 100 waypoints: campiona se necessario
-  let sampled = sorted;
+  let sampled = clean;
   if (sorted.length > 100) {
     const step = Math.ceil(sorted.length / 100);
     sampled = sorted.filter((_, i) => i % step === 0);
