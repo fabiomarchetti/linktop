@@ -62,6 +62,7 @@ class MonitoringTaskHandler extends TaskHandler {
   
   // Channels Supabase
   RealtimeChannel? _commandsChannel;
+  RealtimeChannel? _gpsCommandsChannel;
   
   // Stato
   Position? _lastPosition;
@@ -117,9 +118,12 @@ class MonitoringTaskHandler extends TaskHandler {
     // 3. Avvia sync periodico dati ring
     _startPeriodicSync();
     
-    // 4. Ascolta comandi remoti da Supabase
+    // 4. Ascolta comandi remoti da Supabase (remote_commands)
     _listenForRemoteCommands();
-    
+
+    // 4b. Ascolta comandi GPS da linktop_app_commands (realtime — istantaneo)
+    _listenForGpsCommands();
+
     // 5. Avvia controllo "fuori casa troppo tempo"
     _startOutsideHomeCheck();
     
@@ -144,8 +148,46 @@ class MonitoringTaskHandler extends TaskHandler {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // POLLING COMANDI GPS (background affidabile)
+  // COMANDI GPS (realtime + polling backup)
   // ═══════════════════════════════════════════════════════════════
+
+  /// Listener realtime Supabase per linktop_app_commands — risposta istantanea
+  void _listenForGpsCommands() {
+    if (_patientId == null) return;
+    try {
+      final patientIdInt = int.tryParse(_patientId!);
+      if (patientIdInt == null) return;
+      _gpsCommandsChannel = _supabase
+          .channel('monitoring_gps_commands_$_patientId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'linktop_app_commands',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'paziente_id',
+              value: patientIdInt,
+            ),
+            callback: (payload) async {
+              final row = payload.newRecord;
+              final id = row['id'] as int?;
+              final cmd = row['command'] as String?;
+              final status = row['status'] as String?;
+              if (id == null || cmd == null || status != 'pending') return;
+              if (_handledCommandIds.contains(id)) return;
+              _handledCommandIds.add(id);
+              print('[MonitoringService] Comando realtime: $cmd (id=$id)');
+              if (cmd == 'get_position') {
+                await _sendGpsPosition(commandId: id);
+              }
+            },
+          )
+          .subscribe();
+      print('[MonitoringService] Listener GPS commands attivo');
+    } catch (e) {
+      print('[MonitoringService] Errore listener GPS commands: $e');
+    }
+  }
 
   Future<void> _pollGpsCommands() async {
     if (_patientId == null) return;
@@ -176,12 +218,19 @@ class MonitoringTaskHandler extends TaskHandler {
   Future<void> _sendGpsPosition({int? commandId}) async {
     if (_patientId == null) return;
     try {
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 30),
-        ),
-      );
+      // Usa _lastPosition dal stream se fresca (< 10 min), altrimenti richiede nuova
+      Position? position = _lastPosition;
+      final now = DateTime.now();
+      final isFresh = position != null &&
+          now.difference(position.timestamp).inMinutes < 10;
+      if (!isFresh) {
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 30),
+          ),
+        );
+      }
       final batteryLevel = await _battery.batteryLevel;
       await http.post(
         Uri.parse('$_apiBase/gps/position'),
@@ -237,6 +286,7 @@ class MonitoringTaskHandler extends TaskHandler {
     
     // Cancella subscriptions
     await _commandsChannel?.unsubscribe();
+    await _gpsCommandsChannel?.unsubscribe();
     
     // Disconnetti ring
     await _ringService.disconnect();
