@@ -2,11 +2,14 @@
 // Servizio di monitoraggio completo: GPS, Geofencing, BLE Ring, Comandi Remoti
 
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import 'colmi_ring_service.dart';
 import 'geofence_service.dart';
 import '../models/geofence.dart';
@@ -55,6 +58,7 @@ class MonitoringTaskHandler extends TaskHandler {
   Timer? _gpsTimer;
   Timer? _syncTimer;
   Timer? _outsideHomeCheckTimer;
+  StreamSubscription<Position>? _positionStream;
   
   // Channels Supabase
   RealtimeChannel? _commandsChannel;
@@ -67,6 +71,11 @@ class MonitoringTaskHandler extends TaskHandler {
   Duration _gpsInterval = const Duration(minutes: 5);
   Duration _syncInterval = const Duration(minutes: 30);
   Duration _maxTimeOutsideHome = const Duration(hours: 3);
+
+  // Polling comandi GPS (background affidabile)
+  static const String _apiBase = 'https://www.monitoraggiosalute.com/api';
+  final Set<int> _handledCommandIds = {};
+  int _repeatCount = 0; // contatore per GPS periodico da onRepeatEvent
 
   // ═══════════════════════════════════════════════════════════════
   // LIFECYCLE
@@ -122,18 +131,109 @@ class MonitoringTaskHandler extends TaskHandler {
 
   @override
   void onRepeatEvent(DateTime timestamp) {
-    // Chiamato ogni minuto dal foreground task
-    // Usiamo i nostri timer interni per intervalli più lunghi
+    // Chiamato ogni 60s dal foreground task — affidabile anche a schermo spento
+    _repeatCount++;
+
+    // Polling comandi GPS ad ogni ciclo (ogni 60s)
+    _pollGpsCommands();
+
+    // Invio posizione GPS ogni 5 minuti
+    if (_repeatCount % 5 == 0) {
+      _performGpsCheck();
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // POLLING COMANDI GPS (background affidabile)
+  // ═══════════════════════════════════════════════════════════════
+
+  Future<void> _pollGpsCommands() async {
+    if (_patientId == null) return;
+    try {
+      final response = await http.get(
+        Uri.parse('$_apiBase/gps/pending-commands/$_patientId'),
+      );
+      if (response.statusCode != 200) return;
+      final data = jsonDecode(response.body);
+      if (data['success'] != true) return;
+      final List commands = data['data'] ?? [];
+      for (final row in commands) {
+        final id = row['id'] as int;
+        if (_handledCommandIds.contains(id)) continue;
+        _handledCommandIds.add(id);
+        final cmd = row['command'] as String?;
+        print('[MonitoringService] Comando ricevuto: $cmd (id=$id)');
+        if (cmd == 'get_position') {
+          await _sendGpsPosition(commandId: id);
+        }
+        // misura_anello gestito dall'isolate principale via GpsService
+      }
+    } catch (e) {
+      print('[MonitoringService] Errore polling comandi: $e');
+    }
+  }
+
+  Future<void> _sendGpsPosition({int? commandId}) async {
+    if (_patientId == null) return;
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 30),
+        ),
+      );
+      final batteryLevel = await _battery.batteryLevel;
+      await http.post(
+        Uri.parse('$_apiBase/gps/position'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'paziente_id': _patientId,
+          'lat': position.latitude,
+          'lng': position.longitude,
+          'accuracy': position.accuracy,
+          'altitude': position.altitude,
+          'speed': position.speed,
+          'heading': position.heading,
+          'battery_level': batteryLevel,
+          'source': commandId != null ? 'request' : 'auto',
+        }),
+      );
+      if (commandId != null) {
+        await http.post(
+          Uri.parse('$_apiBase/gps/pending-commands/$_patientId'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'command_id': commandId,
+            'result': {
+              'lat': position.latitude,
+              'lng': position.longitude,
+              'accuracy': position.accuracy,
+            },
+          }),
+        );
+      }
+      print('[MonitoringService] Posizione inviata (cmd=$commandId)');
+    } catch (e) {
+      print('[MonitoringService] Errore invio posizione: $e');
+      if (commandId != null) {
+        await http.post(
+          Uri.parse('$_apiBase/gps/pending-commands/$_patientId'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'command_id': commandId, 'error': e.toString()}),
+        );
+      }
+    }
   }
 
   @override
   Future<void> onDestroy(DateTime timestamp) async {
     print('🛑 MonitoringService in chiusura...');
     
-    // Cancella timers
+    // Cancella timers e stream
     _gpsTimer?.cancel();
     _syncTimer?.cancel();
     _outsideHomeCheckTimer?.cancel();
+    await _positionStream?.cancel();
     
     // Cancella subscriptions
     await _commandsChannel?.unsubscribe();
@@ -217,12 +317,34 @@ class MonitoringTaskHandler extends TaskHandler {
   // ═══════════════════════════════════════════════════════════════
 
   void _startGpsTracking() {
-    // Tracking GPS ogni N minuti
-    _gpsTimer = Timer.periodic(_gpsInterval, (_) async {
-      await _performGpsCheck();
+    // Stream continuo: aggiornamento ogni 50 metri oppure ogni 5 minuti
+    // Funziona anche a schermo spento grazie a foregroundServiceType="location"
+    final locationSettings = Platform.isAndroid
+        ? AndroidSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 50,
+            intervalDuration: _gpsInterval,
+            foregroundNotificationConfig: const ForegroundNotificationConfig(
+              notificationText: 'GPS attivo in background',
+              notificationTitle: 'Monitoraggio posizione',
+              enableWakeLock: true,
+            ),
+          )
+        : const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 50,
+          );
+
+    _positionStream = Geolocator.getPositionStream(locationSettings: locationSettings)
+        .listen((Position position) async {
+      _lastPosition = position;
+      await _sendGpsPosition();
+      await _geofenceService.checkAndLogPosition(position);
+    }, onError: (e) {
+      print('[MonitoringService] Errore stream GPS: $e');
     });
-    
-    print('📍 GPS tracking avviato (ogni ${_gpsInterval.inMinutes} min)');
+
+    print('📍 GPS stream avviato (ogni 50m o ${_gpsInterval.inMinutes} min)');
   }
 
   Future<void> _performGpsCheck() async {

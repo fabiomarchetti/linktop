@@ -68,6 +68,12 @@
             </intent-filter>
         </activity>
 
+        <!-- Foreground service con tipo location: necessario per GPS in background su Android 10+ -->
+        <service
+            android:name="com.pravera.flutter_foreground_task.service.ForegroundTaskService"
+            android:foregroundServiceType="location|connectedDevice"
+            android:exported="false" />
+
         <!-- Boot Receiver per avvio automatico -->
         <receiver
             android:name=".BootReceiver"
