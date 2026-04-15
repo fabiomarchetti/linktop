@@ -211,10 +211,10 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
         return;
       }
 
-      // Polling fino a 2 minuti (connessione ~5s + HR 30s + SpO2 35s + margine)
+      // Polling fino a 5 minuti (connessione ~5s + HR 30s + SpO2 35s + margine)
       const commandId = data.command_id;
       let attempts = 0;
-      const maxAttempts = 120;
+      const maxAttempts = 300;
 
       const poll = setInterval(async () => {
         attempts++;
@@ -230,7 +230,7 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
           if (d.data?.status === "failed") {
             alert("Misurazione fallita. Assicurarsi che l'anello sia indossato e riprova.");
           } else {
-            alert("Timeout: il dispositivo non ha risposto entro 2 minuti. Riprova.");
+            alert("Timeout: il dispositivo non ha risposto entro 5 minuti. Riprova.");
           }
         }
       }, 1000);

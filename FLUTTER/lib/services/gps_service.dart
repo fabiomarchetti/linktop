@@ -165,6 +165,7 @@ class GpsService {
     _autoMeasureTimer = null;
     _scheduleRefreshTimer?.cancel();
     _scheduleRefreshTimer = null;
+    _autoMeasureIntervalMinutes = null; // reset per permettere riavvio timer
     await _commandsChannel?.unsubscribe();
     _commandsChannel = null;
     _isRunning = false;
@@ -189,6 +190,10 @@ class GpsService {
   }
 
   void _applySchedule(int? intervalMinutes) {
+    // Se l'intervallo non e' cambiato, non toccare il timer esistente
+    if (_autoMeasureIntervalMinutes == intervalMinutes) return;
+
+    // Intervallo cambiato (o disattivato): cancella il timer precedente
     _autoMeasureTimer?.cancel();
     _autoMeasureTimer = null;
 
@@ -200,7 +205,6 @@ class GpsService {
       return;
     }
 
-    if (_autoMeasureIntervalMinutes == intervalMinutes) return; // nessun cambiamento
     _autoMeasureIntervalMinutes = intervalMinutes;
     print('[GPS] Auto-misura attiva: ogni $intervalMinutes minuti');
 
