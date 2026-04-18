@@ -76,7 +76,10 @@ class MonitoringTaskHandler extends TaskHandler {
   // Polling comandi GPS (background affidabile)
   static const String _apiBase = 'https://www.monitoraggiosalute.com/api';
   final Set<int> _handledCommandIds = {};
-  int _repeatCount = 0; // contatore per GPS periodico da onRepeatEvent
+  int _repeatCount = 0;
+
+  // Callback per videochiamata in arrivo (gestito dall'isolate principale)
+  static void Function(String roomName, String jwt)? onVideoCallCommand;
 
   // ═══════════════════════════════════════════════════════════════
   // LIFECYCLE
@@ -179,6 +182,14 @@ class MonitoringTaskHandler extends TaskHandler {
               print('[MonitoringService] Comando realtime: $cmd (id=$id)');
               if (cmd == 'get_position') {
                 await _sendGpsPosition(commandId: id);
+              } else if (cmd == 'video_call') {
+                final payload = row['payload'] as Map<String, dynamic>?;
+                if (payload != null && onVideoCallCommand != null) {
+                  onVideoCallCommand!(
+                    payload['room_name'] as String? ?? '',
+                    payload['jwt_guest'] as String? ?? '',
+                  );
+                }
               }
             },
           )
@@ -207,6 +218,14 @@ class MonitoringTaskHandler extends TaskHandler {
         print('[MonitoringService] Comando ricevuto: $cmd (id=$id)');
         if (cmd == 'get_position') {
           await _sendGpsPosition(commandId: id);
+        } else if (cmd == 'video_call') {
+          final payload = row['payload'] as Map<String, dynamic>?;
+          if (payload != null && MonitoringTaskHandler.onVideoCallCommand != null) {
+            MonitoringTaskHandler.onVideoCallCommand!(
+              payload['room_name'] as String? ?? '',
+              payload['jwt_guest'] as String? ?? '',
+            );
+          }
         }
         // misura_anello gestito dall'isolate principale via GpsService
       }

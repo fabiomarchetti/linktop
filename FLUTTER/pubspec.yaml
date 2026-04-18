@@ -50,6 +50,9 @@ dependencies:
   connectivity_plus: ^6.1.0
   wakelock_plus: ^1.2.8
 
+  # Videochiamata JaaS / Jitsi
+  jitsi_meet_flutter_sdk: ^10.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

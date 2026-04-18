@@ -19,6 +19,7 @@ import 'screens/health_screen.dart';
 import 'screens/ring_screen.dart';
 import 'screens/contacts_screen.dart';
 import 'screens/colmi_test_screen.dart';
+import 'screens/video_call_screen.dart';
 import 'services/monitoring_service.dart';
 import 'services/gps_service.dart';
 import 'services/colmi_service.dart';
@@ -244,6 +245,25 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> with WidgetsBindingOb
         commandId: commandId,
         completeCommand: gpsService.completeCommandPublic,
       );
+    };
+
+    // Callback videochiamata in arrivo
+    MonitoringTaskHandler.onVideoCallCommand = (String roomName, String jwt) {
+      if (!mounted) return;
+      final prefs = SharedPreferences.getInstance();
+      prefs.then((p) {
+        final jaasAppId = 'vpaas-magic-cookie-10cb4ce2a55642a48ec64bd0bede1d8e';
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => VideoCallScreen(
+              roomName: roomName,
+              jwt: jwt,
+              jaasAppId: jaasAppId,
+              onCallEnded: () => Navigator.of(context).pop(),
+            ),
+          ),
+        );
+      });
     };
 
     // Configura callback per misurazioni automatiche pianificate (no commandId)

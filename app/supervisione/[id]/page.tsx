@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   MapPin, LogOut, Heart, Activity, Thermometer, Droplet,
-  RefreshCw, Loader2, Navigation, Circle as CircleIcon, Trash2, AlertCircle, TrendingUp, Clock,
+  RefreshCw, Loader2, Navigation, Circle as CircleIcon, Trash2, AlertCircle, TrendingUp, Clock, Video, PhoneOff,
 } from "lucide-react";
 
 const MapView = dynamic(() => import("./MapView"), { ssr: false });
@@ -70,6 +70,10 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
   const [requestingRing, setRequestingRing] = useState(false);
   const [autoMeasureInterval, setAutoMeasureInterval] = useState<number | null>(null);
   const [savingSchedule, setSavingSchedule] = useState(false);
+
+  // Videochiamata
+  const [videoCallActive, setVideoCallActive] = useState(false);
+  const [videoCallData, setVideoCallData] = useState<{ roomName: string; jwt: string; appId: string } | null>(null);
 
   // Drawing geofence
   const [drawingMode, setDrawingMode] = useState(false);
@@ -240,6 +244,33 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
     }
   };
 
+  const handleStartVideoCall = async () => {
+    try {
+      const session = localStorage.getItem("linktop_supervisione");
+      const nomeOperatore = session ? JSON.parse(session)?.nome || "Familiare" : "Familiare";
+      const res = await fetch(`/api/video/call/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome_operatore: nomeOperatore }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert("Errore avvio videochiamata: " + data.error);
+        return;
+      }
+      setVideoCallData({ roomName: data.room_name, jwt: data.jwt_moderator, appId: data.jaas_app_id });
+      setVideoCallActive(true);
+    } catch (e: any) {
+      alert("Errore: " + e.message);
+    }
+  };
+
+  const handleEndVideoCall = async () => {
+    setVideoCallActive(false);
+    setVideoCallData(null);
+    await fetch(`/api/video/call/${id}`, { method: "DELETE" });
+  };
+
   const handleScheduleChange = async (value: string) => {
     const interval = value === "" ? null : parseInt(value);
     setSavingSchedule(true);
@@ -390,6 +421,14 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
               color="purple"
               onClick={() => setChartMetric("blood_pressure")}
             />
+
+            {/* Bottone videochiamata */}
+            <button
+              onClick={handleStartVideoCall}
+              className="w-full flex items-center justify-center gap-2 px-3 py-3 text-sm bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl shadow-md hover:from-green-600 hover:to-emerald-700 transition-all"
+            >
+              <Video className="w-4 h-4" /> Videochiama
+            </button>
 
             {/* Bottone misura anello */}
             <button
@@ -686,7 +725,46 @@ export default function SupervisionePage({ params }: { params: Promise<{ id: str
         </div>
         {/* Fine layout 2 colonne */}
       </main>
+
+      {/* Modal videochiamata */}
+      {videoCallActive && videoCallData && (
+        <div className="fixed inset-0 z-50 bg-black flex flex-col">
+          <div className="flex items-center justify-between px-4 py-2 bg-gray-900">
+            <span className="text-white font-bold flex items-center gap-2">
+              <Video className="w-5 h-5 text-green-400" />
+              Videochiamata in corso
+            </span>
+            <button
+              onClick={handleEndVideoCall}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
+            >
+              <PhoneOff className="w-4 h-4" /> Termina
+            </button>
+          </div>
+          <div className="flex-1">
+            <JitsiFrame
+              appId={videoCallData.appId}
+              roomName={videoCallData.roomName}
+              jwt={videoCallData.jwt}
+            />
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+function JitsiFrame({ appId, roomName, jwt }: {
+  appId: string; roomName: string; jwt: string;
+}) {
+  const url = `https://8x8.vc/${appId}/${roomName}?jwt=${jwt}`;
+  return (
+    <iframe
+      src={url}
+      allow="camera; microphone; display-capture; fullscreen; clipboard-read; clipboard-write"
+      style={{ width: "100%", height: "100%", border: "none" }}
+      title="Videochiamata"
+    />
   );
 }
 
