@@ -1,4 +1,4 @@
-import { Client, ClientConfig } from 'pg'
+import { Client, ClientConfig, QueryResult } from 'pg' // QueryResult usato nel tipo di db.query
 
 const getClientConfig = (): ClientConfig => {
   const connStr = process.env.LINKTOP_DB_URL
@@ -30,8 +30,8 @@ export async function withDb<T>(fn: (client: Client) => Promise<T>): Promise<T> 
 
 // Compatibilità: pool-like object con solo .query() per le route esistenti
 const db = {
-  query: (text: string, values?: any[]) =>
-    withDb(c => c.query(text, values)),
+  query: <T = any>(text: string, values?: any[]): Promise<QueryResult<T>> =>
+    withDb(c => c.query<T>(text, values)),
 }
 
 export default db
