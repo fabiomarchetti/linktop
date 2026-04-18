@@ -44,9 +44,10 @@ function generateJWT(roomName: string, displayName: string, isModerator: boolean
 // Avvia una videochiamata: genera JWT, invia comando al telefono, ritorna dati per il portale
 export async function POST(
   req: NextRequest,
-  { params }: { params: { pazienteId: string } }
+  { params }: { params: Promise<{ pazienteId: string }> }
 ) {
-  const pazienteId = parseInt(params.pazienteId);
+  const { pazienteId: pazienteIdStr } = await params;
+  const pazienteId = parseInt(pazienteIdStr);
   if (isNaN(pazienteId)) {
     return NextResponse.json({ success: false, error: 'ID non valido' }, { status: 400 });
   }
@@ -101,10 +102,11 @@ export async function POST(
 // DELETE /api/video/call/[pazienteId]
 // Termina la chiamata: segna il comando come completato
 export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { pazienteId: string } }
+  _req: NextRequest,
+  { params }: { params: Promise<{ pazienteId: string }> }
 ) {
-  const pazienteId = parseInt(params.pazienteId);
+  const { pazienteId: pazienteIdStr } = await params;
+  const pazienteId = parseInt(pazienteIdStr);
   if (isNaN(pazienteId)) {
     return NextResponse.json({ success: false, error: 'ID non valido' }, { status: 400 });
   }
