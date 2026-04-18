@@ -414,7 +414,14 @@ class GpsService {
         }
         break;
       case 'video_call':
-        final payload = command['payload'] as Map<String, dynamic>?;
+        // Supabase realtime consegna JSONB come stringa — va parsata
+        final rawPayload = command['payload'];
+        Map<String, dynamic>? payload;
+        if (rawPayload is Map<String, dynamic>) {
+          payload = rawPayload;
+        } else if (rawPayload is String) {
+          try { payload = jsonDecode(rawPayload) as Map<String, dynamic>; } catch (_) {}
+        }
         if (payload != null && onVideoCallCommand != null) {
           onVideoCallCommand!(
             payload['room_name'] as String? ?? '',
