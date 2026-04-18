@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
+import { withDb } from '@/lib/db';
 import * as crypto from 'crypto';
-
-const pool = new Pool({ connectionString: process.env.LINKTOP_DB_URL, max: 1 });
 
 const JAAS_APP_ID = process.env.JAAS_APP_ID!;
 const JAAS_KEY_ID = process.env.JAAS_KEY_ID!;
@@ -67,20 +65,21 @@ export async function POST(
 
     // Invia comando video_call al telefono via linktop_app_commands
     // Se esiste già un comando pending per questa stanza, non ne crea un altro
-    const existing = await pool.query(
-      `SELECT id FROM linktop_app_commands
-       WHERE paziente_id = $1 AND command = 'video_call' AND status = 'pending'
-       LIMIT 1`,
-      [pazienteId]
-    );
-
-    if (existing.rows.length === 0) {
-      await pool.query(
-        `INSERT INTO linktop_app_commands (paziente_id, command, status, payload)
-         VALUES ($1, 'video_call', 'pending', $2)`,
-        [pazienteId, JSON.stringify({ room_name: roomName, jwt_guest: jwtGuest })]
+    await withDb(async (c) => {
+      const existing = await c.query(
+        `SELECT id FROM linktop_app_commands
+         WHERE paziente_id = $1 AND command = 'video_call' AND status = 'pending'
+         LIMIT 1`,
+        [pazienteId]
       );
-    }
+      if (existing.rows.length === 0) {
+        await c.query(
+          `INSERT INTO linktop_app_commands (paziente_id, command, status, payload)
+           VALUES ($1, 'video_call', 'pending', $2)`,
+          [pazienteId, JSON.stringify({ room_name: roomName, jwt_guest: jwtGuest })]
+        );
+      }
+    });
 
     return NextResponse.json({
       success: true,
@@ -107,12 +106,12 @@ export async function DELETE(
   }
 
   try {
-    await pool.query(
+    await withDb(c => c.query(
       `UPDATE linktop_app_commands
        SET status = 'completed'
        WHERE paziente_id = $1 AND command = 'video_call' AND status = 'pending'`,
       [pazienteId]
-    );
+    ));
     return NextResponse.json({ success: true });
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e.message }, { status: 500 });

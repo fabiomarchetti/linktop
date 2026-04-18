@@ -1,76 +1,37 @@
-import { Pool, PoolConfig } from 'pg'
+import { Client, ClientConfig } from 'pg'
 
-/**
- * Configurazione Database Supabase per LINKTOP
- *
- * Priorità connection strings:
- * 1. LINKTOP_DB_URL (custom - per Supabase Session Pooler)
- * 2. POSTGRES_URL o DATABASE_URL (standard Vercel/Supabase)
- *
- * Note:
- * - In sviluppo locale usa .env.local con LINKTOP_DB_URL
- * - In produzione (Vercel) imposta LINKTOP_DB_URL nelle env vars
- * - SSL con rejectUnauthorized: false è necessario per Supabase Pooler
- */
-const getPoolConfig = (): PoolConfig => {
-  // 1. PRIORITÀ ASSOLUTA: Connection string custom (Supabase Session Pooler)
-  if (process.env.LINKTOP_DB_URL) {
-    console.log('🔌 LINKTOP: Connessione Supabase (LINKTOP_DB_URL)')
+const getClientConfig = (): ClientConfig => {
+  const connStr = process.env.LINKTOP_DB_URL
+    || process.env.POSTGRES_URL
+    || process.env.DATABASE_URL
 
-    // Rimuovi query params dalla URL se presenti (es. ?sslmode=...)
-    const cleanUrl = process.env.LINKTOP_DB_URL.split('?')[0]
-
-    return {
-      connectionString: cleanUrl,
-      ssl: {
-        rejectUnauthorized: false // Necessario per Supabase Session Pooler
-      },
-      max: 2,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
-    }
+  if (!connStr) {
+    throw new Error('Nessuna variabile DB configurata (LINKTOP_DB_URL / POSTGRES_URL / DATABASE_URL)')
   }
 
-  // 2. FALLBACK: Standard Supabase/Vercel connection string
-  const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL
-
-  if (connectionString) {
-    console.log('🔌 LINKTOP: Connessione Supabase Standard (POSTGRES_URL/DATABASE_URL)')
-
-    const cleanUrl = connectionString.split('?')[0]
-
-    return {
-      connectionString: cleanUrl,
-      ssl: {
-        rejectUnauthorized: false
-      },
-      max: 2,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
-    }
+  return {
+    connectionString: connStr.split('?')[0],
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 10000,
   }
-
-  // 3. NESSUNA CONFIGURAZIONE TROVATA
-  throw new Error(
-    '❌ LINKTOP: Nessuna configurazione database trovata!\n' +
-    '   Imposta una delle seguenti variabili d\'ambiente:\n' +
-    '   - LINKTOP_DB_URL (consigliato per Supabase Session Pooler)\n' +
-    '   - POSTGRES_URL o DATABASE_URL (standard Vercel/Supabase)\n\n' +
-    '   Vedi .env.local per un esempio o doc/SUPABASE_CONFIG.md per dettagli.'
-  )
 }
 
-// Crea il pool con la configurazione determinata
-const pool = new Pool(getPoolConfig())
+// Esegue una callback con un Client dedicato, chiude la connessione al termine.
+// Uso: const rows = await withDb(c => c.query(...))
+export async function withDb<T>(fn: (client: Client) => Promise<T>): Promise<T> {
+  const client = new Client(getClientConfig())
+  await client.connect()
+  try {
+    return await fn(client)
+  } finally {
+    await client.end()
+  }
+}
 
-// Gestione errori del pool
-pool.on('error', (err) => {
-  console.error('❌ Errore pool PostgreSQL LINKTOP:', err)
-})
+// Compatibilità: pool-like object con solo .query() per le route esistenti
+const db = {
+  query: (text: string, values?: any[]) =>
+    withDb(c => c.query(text, values)),
+}
 
-// Log connessione riuscita
-pool.on('connect', () => {
-  console.log('✅ LINKTOP: Connesso al database Supabase')
-})
-
-export default pool
+export default db
