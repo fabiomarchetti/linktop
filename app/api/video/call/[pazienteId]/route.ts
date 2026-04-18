@@ -75,8 +75,8 @@ export async function POST(
       if (existing.rows.length === 0) {
         await c.query(
           `INSERT INTO linktop_app_commands (paziente_id, command, status, payload)
-           VALUES ($1, 'video_call', 'pending', $2)`,
-          [pazienteId, { room_name: roomName, jwt_guest: jwtGuest }]
+           VALUES ($1, 'video_call', 'pending', $2::jsonb)`,
+          [pazienteId, JSON.stringify({ room_name: roomName, jwt_guest: jwtGuest })]
         );
       }
     });
