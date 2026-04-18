@@ -247,6 +247,11 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> with WidgetsBindingOb
       );
     };
 
+    // Chiusura videochiamata dal portale
+    gpsService.onEndVideoCallCommand = () {
+      VideoCallScreen.forceEnd();
+    };
+
     // Videochiamata in arrivo: gestita da GpsService (main isolate — affidabile)
     gpsService.onVideoCallCommand = (String roomName, String jwt) {
       if (!mounted) return;

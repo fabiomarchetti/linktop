@@ -3,6 +3,7 @@
 // e risponde a richieste "Richiedi posizione ora" in realtime
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
@@ -62,6 +63,7 @@ class GpsService {
 
   Function(int commandId)? onMeasureRingCommand;
   void Function(String roomName, String jwt)? onVideoCallCommand;
+  VoidCallback? onEndVideoCallCommand;
   /// Callback per misurazioni automatiche (senza commandId)
   Future<void> Function()? onAutoMeasureRing;
 
@@ -239,6 +241,7 @@ class GpsService {
             'id': id,
             'command': row['command'],
             'status': 'pending',
+            'payload': row['payload'],
           });
         }
       }
@@ -414,20 +417,33 @@ class GpsService {
         }
         break;
       case 'video_call':
-        // Supabase realtime consegna JSONB come stringa — va parsata
+        print('[GPS] video_call ricevuto. rawPayload=${command['payload']} type=${command['payload']?.runtimeType}');
         final rawPayload = command['payload'];
         Map<String, dynamic>? payload;
         if (rawPayload is Map<String, dynamic>) {
           payload = rawPayload;
+          print('[GPS] payload già Map');
         } else if (rawPayload is String) {
-          try { payload = jsonDecode(rawPayload) as Map<String, dynamic>; } catch (_) {}
+          try {
+            payload = jsonDecode(rawPayload) as Map<String, dynamic>;
+            print('[GPS] payload parsato da stringa');
+          } catch (e) {
+            print('[GPS] errore parsing payload: $e');
+          }
+        } else {
+          print('[GPS] payload null o tipo inatteso: ${rawPayload?.runtimeType}');
         }
+        print('[GPS] onVideoCallCommand=${onVideoCallCommand != null} payload=$payload');
         if (payload != null && onVideoCallCommand != null) {
           onVideoCallCommand!(
             payload['room_name'] as String? ?? '',
             payload['jwt_guest'] as String? ?? '',
           );
         }
+        break;
+      case 'end_video_call':
+        print('[GPS] end_video_call ricevuto');
+        if (onEndVideoCallCommand != null) onEndVideoCallCommand!();
         break;
       default:
         print('[GPS] Comando non gestito: $commandType');

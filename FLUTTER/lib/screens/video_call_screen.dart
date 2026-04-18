@@ -7,6 +7,8 @@ import 'package:jitsi_meet_flutter_sdk/jitsi_meet_flutter_sdk.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 class VideoCallScreen extends StatefulWidget {
+  static _VideoCallScreenState? _activeState;
+  static void forceEnd() => _activeState?._forceEnd();
   final String roomName;
   final String jwt;
   final String jaasAppId;
@@ -33,15 +35,21 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
   @override
   void initState() {
     super.initState();
+    VideoCallScreen._activeState = this;
     WakelockPlus.enable();
     _startCountdown();
   }
 
   @override
   void dispose() {
+    if (VideoCallScreen._activeState == this) VideoCallScreen._activeState = null;
     _countdownTimer?.cancel();
     WakelockPlus.disable();
     super.dispose();
+  }
+
+  void _forceEnd() {
+    _jitsi.hangUp();
   }
 
   void _startCountdown() {

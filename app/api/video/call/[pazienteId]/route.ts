@@ -109,12 +109,19 @@ export async function DELETE(
   }
 
   try {
-    await withDb(c => c.query(
-      `UPDATE linktop_app_commands
-       SET status = 'completed'
-       WHERE paziente_id = $1 AND command = 'video_call' AND status = 'pending'`,
-      [pazienteId]
-    ));
+    await withDb(async c => {
+      await c.query(
+        `UPDATE linktop_app_commands
+         SET status = 'completed'
+         WHERE paziente_id = $1 AND command = 'video_call' AND status = 'pending'`,
+        [pazienteId]
+      );
+      await c.query(
+        `INSERT INTO linktop_app_commands (paziente_id, command, status)
+         VALUES ($1, 'end_video_call', 'pending')`,
+        [pazienteId]
+      );
+    });
     return NextResponse.json({ success: true });
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e.message }, { status: 500 });
