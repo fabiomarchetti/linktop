@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import pool from '@/lib/db'
+import { withDb } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,16 +14,13 @@ export async function GET() {
     }
 
     // 2. Prova connessione al DB
-    const client = await pool.connect()
-    let dbResult
+    let dbResult: any
     let connectionInfo = 'Unknown'
-    try {
-      const res = await client.query('SELECT version(), current_database(), inet_server_addr(), inet_server_port()')
+    await withDb(async (c) => {
+      const res = await c.query('SELECT version(), current_database(), inet_server_addr(), inet_server_port()')
       dbResult = res.rows[0]
       connectionInfo = `Connected to ${dbResult.inet_server_addr}:${dbResult.inet_server_port}`
-    } finally {
-      client.release()
-    }
+    })
 
     return NextResponse.json({
       status: 'success',
