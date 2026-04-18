@@ -184,11 +184,12 @@ class MonitoringTaskHandler extends TaskHandler {
                 await _sendGpsPosition(commandId: id);
               } else if (cmd == 'video_call') {
                 final payload = row['payload'] as Map<String, dynamic>?;
-                if (payload != null && onVideoCallCommand != null) {
-                  onVideoCallCommand!(
-                    payload['room_name'] as String? ?? '',
-                    payload['jwt_guest'] as String? ?? '',
-                  );
+                if (payload != null) {
+                  FlutterForegroundTask.sendDataToMain({
+                    'type': 'video_call',
+                    'room_name': payload['room_name'] ?? '',
+                    'jwt': payload['jwt_guest'] ?? '',
+                  });
                 }
               }
             },
@@ -220,11 +221,12 @@ class MonitoringTaskHandler extends TaskHandler {
           await _sendGpsPosition(commandId: id);
         } else if (cmd == 'video_call') {
           final payload = row['payload'] as Map<String, dynamic>?;
-          if (payload != null && MonitoringTaskHandler.onVideoCallCommand != null) {
-            MonitoringTaskHandler.onVideoCallCommand!(
-              payload['room_name'] as String? ?? '',
-              payload['jwt_guest'] as String? ?? '',
-            );
+          if (payload != null) {
+            FlutterForegroundTask.sendDataToMain({
+              'type': 'video_call',
+              'room_name': payload['room_name'] ?? '',
+              'jwt': payload['jwt_guest'] ?? '',
+            });
           }
         }
         // misura_anello gestito dall'isolate principale via GpsService
