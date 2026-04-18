@@ -6,7 +6,7 @@ const pool = new Pool({ connectionString: process.env.LINKTOP_DB_URL });
 
 const JAAS_APP_ID = process.env.JAAS_APP_ID!;
 const JAAS_KEY_ID = process.env.JAAS_KEY_ID!;
-const JAAS_PRIVATE_KEY = process.env.JAAS_PRIVATE_KEY!.replace(/\\n/g, '\n');
+const JAAS_PRIVATE_KEY = (process.env.JAAS_PRIVATE_KEY ?? '').replace(/\\n/g, '\n');
 
 function base64url(data: string | Buffer): string {
   const buf = typeof data === 'string' ? Buffer.from(data) : data;
