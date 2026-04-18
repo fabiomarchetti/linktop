@@ -73,11 +73,14 @@ export async function POST(
         [pazienteId]
       );
       if (existing.rows.length === 0) {
-        await c.query(
+        const payloadStr = JSON.stringify({ room_name: roomName, jwt_guest: jwtGuest });
+        const ins = await c.query(
           `INSERT INTO linktop_app_commands (paziente_id, command, status, payload)
-           VALUES ($1, 'video_call', 'pending', $2::jsonb)`,
-          [pazienteId, JSON.stringify({ room_name: roomName, jwt_guest: jwtGuest })]
+           VALUES ($1, 'video_call', 'pending', $2)
+           RETURNING id, payload`,
+          [pazienteId, payloadStr]
         );
+        console.log('[video/call] INSERT result:', JSON.stringify(ins.rows[0]));
       }
     });
 
