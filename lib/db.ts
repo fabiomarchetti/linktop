@@ -25,7 +25,7 @@ const getPoolConfig = (): PoolConfig => {
       ssl: {
         rejectUnauthorized: false // Necessario per Supabase Session Pooler
       },
-      max: 20,
+      max: 2,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
     }
@@ -44,7 +44,7 @@ const getPoolConfig = (): PoolConfig => {
       ssl: {
         rejectUnauthorized: false
       },
-      max: 20,
+      max: 2,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,
     }
