@@ -61,6 +61,7 @@ class GpsService {
   int? _autoMeasureIntervalMinutes;
 
   Function(int commandId)? onMeasureRingCommand;
+  void Function(String roomName, String jwt)? onVideoCallCommand;
   /// Callback per misurazioni automatiche (senza commandId)
   Future<void> Function()? onAutoMeasureRing;
 
@@ -410,6 +411,15 @@ class GpsService {
         } else {
           print('[GPS] onMeasureRingCommand non configurato');
           await _completeCommand(commandId!, null, error: 'handler non configurato');
+        }
+        break;
+      case 'video_call':
+        final payload = command['payload'] as Map<String, dynamic>?;
+        if (payload != null && onVideoCallCommand != null) {
+          onVideoCallCommand!(
+            payload['room_name'] as String? ?? '',
+            payload['jwt_guest'] as String? ?? '',
+          );
         }
         break;
       default:

@@ -247,26 +247,21 @@ class _KioskHomeScreenState extends State<KioskHomeScreen> with WidgetsBindingOb
       );
     };
 
-    // Ricevi eventi dal task handler (isolate separato) via sendDataToMain
-    FlutterForegroundTask.addTaskDataCallback((data) {
+    // Videochiamata in arrivo: gestita da GpsService (main isolate — affidabile)
+    gpsService.onVideoCallCommand = (String roomName, String jwt) {
       if (!mounted) return;
-      final map = data as Map<String, dynamic>;
-      if (map['type'] == 'video_call') {
-        final roomName = map['room_name'] as String? ?? '';
-        final jwt = map['jwt'] as String? ?? '';
-        const jaasAppId = 'vpaas-magic-cookie-10cb4ce2a55642a48ec64bd0bede1d8e';
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => VideoCallScreen(
-              roomName: roomName,
-              jwt: jwt,
-              jaasAppId: jaasAppId,
-              onCallEnded: () => Navigator.of(context).pop(),
-            ),
+      const jaasAppId = 'vpaas-magic-cookie-10cb4ce2a55642a48ec64bd0bede1d8e';
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => VideoCallScreen(
+            roomName: roomName,
+            jwt: jwt,
+            jaasAppId: jaasAppId,
+            onCallEnded: () => Navigator.of(context).pop(),
           ),
-        );
-      }
-    });
+        ),
+      );
+    };
 
     // Configura callback per misurazioni automatiche pianificate (no commandId)
     gpsService.onAutoMeasureRing = () async {
