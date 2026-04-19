@@ -29,6 +29,7 @@ class VideoCallScreen extends StatefulWidget {
 class _VideoCallScreenState extends State<VideoCallScreen> {
   final _jitsi = JitsiMeet();
   bool _joining = false;
+  bool _ended = false;
   int _countdown = 5;
   Timer? _countdownTimer;
 
@@ -50,9 +51,7 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   void _forceEnd() {
     _jitsi.hangUp();
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) widget.onCallEnded();
-    });
+    Future.delayed(const Duration(seconds: 2), _end);
   }
 
   void _startCountdown() {
@@ -92,13 +91,16 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
 
     final listener = JitsiMeetEventListener(
-      conferenceTerminated: (url, error) {
-        if (mounted) widget.onCallEnded();
-      },
+      conferenceTerminated: (url, error) => _end(),
     );
 
     await _jitsi.join(options, listener);
-    // Jitsi chiuso per qualsiasi motivo — torna all'app principale
+    _end();
+  }
+
+  void _end() {
+    if (_ended) return;
+    _ended = true;
     if (mounted) widget.onCallEnded();
   }
 
