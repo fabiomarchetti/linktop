@@ -50,6 +50,9 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   void _forceEnd() {
     _jitsi.hangUp();
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) widget.onCallEnded();
+    });
   }
 
   void _startCountdown() {
@@ -95,6 +98,8 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
     );
 
     await _jitsi.join(options, listener);
+    // Jitsi chiuso per qualsiasi motivo — torna all'app principale
+    if (mounted) widget.onCallEnded();
   }
 
   @override
